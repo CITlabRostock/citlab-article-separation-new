@@ -5,10 +5,10 @@ import re
 
 import matplotlib.pyplot as plt
 
-from citlab_python_util.geometry.polygon import string_to_poly
-from citlab_python_util.parser.xml.page import plot
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.parser.xml.page.plot import COLORS, DEFAULT_COLOR
+from python_util.geometry.polygon import string_to_poly
+from python_util.parser.xml.page import plot
+from python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.plot import COLORS, DEFAULT_COLOR
 
 
 def list_img_intersect(l1, l2):

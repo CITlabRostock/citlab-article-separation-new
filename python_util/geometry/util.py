@@ -5,8 +5,8 @@ import numpy as np
 from collections import Counter
 from scipy.spatial import Delaunay
 
-from citlab_python_util.geometry.polygon import calc_reg_line_stats, Polygon, norm_poly_dists
-from citlab_python_util.geometry.rectangle import Rectangle
+from python_util.geometry.polygon import calc_reg_line_stats, Polygon, norm_poly_dists
+from python_util.geometry.rectangle import Rectangle
 
 
 def merge_rectangles(rectangle_list):

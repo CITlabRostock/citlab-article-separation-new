@@ -1,7 +1,7 @@
 from matplotlib.collections import PolyCollection
 import matplotlib.pyplot as plt
 
-from citlab_article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
+from article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
 
 
 class TextBlockNetPostProcessor(RegionNetPostProcessor):

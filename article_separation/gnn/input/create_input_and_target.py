@@ -1,7 +1,7 @@
 import json
 import numpy as np
 
-from citlab_article_separation.gnn.input.feature_generation import build_input_and_target_bc
+from article_separation.gnn.input.feature_generation import build_input_and_target_bc
 
 
 def get_input_and_target_from_xml(path_to_xml, provide_relations_to_consider, external_data,

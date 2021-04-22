@@ -2,7 +2,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from citlab_python_util.image_processing.image_stats import get_scaling_factor
+from python_util.image_processing.image_stats import get_scaling_factor
 
 
 def load_image_paths(image_list):

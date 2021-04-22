@@ -7,7 +7,7 @@ from multiprocessing.pool import ThreadPool
 
 def worker(sample, counter, flags, skipped_files):
     my_tool_subprocess = \
-        subprocess.Popen(["python", "citlab_article_separation/textregion_generation/textregion_generation.py",
+        subprocess.Popen(["python", "article_separation/textregion_generation/textregion_generation.py",
                           "--path_to_xml_file", sample,
                           "--des_dist", str(flags.des_dist),
                           "--max_d", str(flags.max_d),

@@ -7,9 +7,9 @@ from argparse import ArgumentParser
 import cssutils
 from lxml import etree
 
-import citlab_python_util.parser.xml.page.page_constants as page_const
-from citlab_python_util.parser.xml.page import page_util, page_objects
-from citlab_python_util.parser.xml.page.page_objects import TextLine, TextRegion, REGIONS_DICT, Word
+import python_util.parser.xml.page.page_constants as page_const
+from python_util.parser.xml.page import page_util, page_objects
+from python_util.parser.xml.page.page_objects import TextLine, TextRegion, REGIONS_DICT, Word
 
 # Make sure that the css parser for the custom attribute doesn't spam "WARNING Property: Unknown Property name."
 cssutils.log.setLevel(logging.ERROR)

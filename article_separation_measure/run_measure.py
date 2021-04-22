@@ -4,10 +4,10 @@ import jpype
 import numpy as np
 import os
 from argparse import ArgumentParser
-from citlab_python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.page import Page
 
-from citlab_python_util.math.measure import f_measure
-from citlab_article_separation_measure.eval_measure import BaselineMeasureEval
+from python_util.math.measure import f_measure
+from article_separation_measure.eval_measure import BaselineMeasureEval
 
 
 def get_data_from_pagexml(path_to_pagexml):

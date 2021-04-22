@@ -1,6 +1,6 @@
 import logging
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
+from python_util.parser.xml.page.page import Page
+from article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
 from tqdm import tqdm
 from argparse import ArgumentParser
 import sys

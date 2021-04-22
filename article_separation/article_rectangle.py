@@ -1,10 +1,10 @@
 import copy
 
 import jpype
-from citlab_python_util.geometry.polygon import norm_poly_dists
-from citlab_python_util.geometry.rectangle import Rectangle
-from citlab_python_util.geometry.util import check_intersection
-from citlab_python_util.parser.xml.page.page_objects import TextLine
+from python_util.geometry.polygon import norm_poly_dists
+from python_util.geometry.rectangle import Rectangle
+from python_util.geometry.util import check_intersection
+from python_util.parser.xml.page.page_objects import TextLine
 
 import matplotlib.patches as patches
 from matplotlib import pyplot as plt
@@ -178,7 +178,7 @@ class ArticleRectangle(Rectangle):
         list_of_normed_polygons = norm_poly_dists([tl[2] for tl in tl_list], des_dist=des_dist)
 
         # call java code to calculate the interline distances
-        java_util = jpype.JPackage("citlab_article_separation.java").Util()
+        java_util = jpype.JPackage("article_separation.java").Util()
 
         list_of_normed_polygon_java = []
 

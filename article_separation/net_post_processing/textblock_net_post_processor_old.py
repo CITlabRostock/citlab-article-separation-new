@@ -4,8 +4,8 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from citlab_python_util.geometry.rectangle import Rectangle
-from citlab_python_util.image_processing.image_stats import get_rotation_angle
+from python_util.geometry.rectangle import Rectangle
+from python_util.image_processing.image_stats import get_rotation_angle
 from scipy.ndimage import interpolation as inter
 
 logger = logging.getLogger("TextBlockNetPostProcessor")

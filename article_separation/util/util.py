@@ -1,15 +1,15 @@
 import copy
 from collections import defaultdict
 
-from citlab_python_util.geometry.polygon import Polygon, list_to_polygon_object
-from citlab_python_util.geometry.rectangle import Rectangle
-from citlab_python_util.geometry.util import ortho_connect, smooth_surrounding_polygon, polygon_clip, convex_hull, \
+from python_util.geometry.polygon import Polygon, list_to_polygon_object
+from python_util.geometry.rectangle import Rectangle
+from python_util.geometry.util import ortho_connect, smooth_surrounding_polygon, polygon_clip, convex_hull, \
     bounding_box, merge_rectangles
-from citlab_python_util.image_processing.white_space_detection import get_binarization, is_whitespace
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.parser.xml.page.page_objects import Points
+from python_util.image_processing.white_space_detection import get_binarization, is_whitespace
+from python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.page_objects import Points
 
-from citlab_article_separation.article_rectangle import ArticleRectangle
+from article_separation.article_rectangle import ArticleRectangle
 
 
 def get_article_surrounding_polygons(ar_dict):
@@ -484,9 +484,9 @@ if __name__ == '__main__':
     surr_polys_dict = merge_article_rectangles_vertically(article_rectangles_dict)
 
     import matplotlib.pyplot as plt
-    from citlab_python_util.parser.xml.page import plot as page_plot
+    from python_util.parser.xml.page import plot as page_plot
     from matplotlib.collections import PolyCollection
-    from citlab_python_util.plot import colors
+    from python_util.plot import colors
 
     # page_plot.plot_pagexml(xml_path, img_path)
 

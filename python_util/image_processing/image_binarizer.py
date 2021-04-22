@@ -5,7 +5,7 @@ import cv2
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from citlab_python_util.io.file_loader import load_list_file
+from python_util.io.file_loader import load_list_file
 
 
 class ImageBinarizer:

@@ -70,7 +70,7 @@ if __name__ == '__main__':
     img_path = "abc"
     page_path = "xyz"
 
-    from citlab_python_util.parser.xml.page.page import Page
+    from python_util.parser.xml.page.page import Page
     # Load page and textlines
     page = Page(page_path)
     text_lines = page.get_textlines()

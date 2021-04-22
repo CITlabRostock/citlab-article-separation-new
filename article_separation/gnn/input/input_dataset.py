@@ -4,10 +4,10 @@ import logging
 from random import Random
 from PIL import Image
 
-from citlab_python_util.io.path_util import *
-from citlab_article_separation.gnn.input.create_input_and_target import get_input_and_target_from_json,\
+from python_util.io.path_util import *
+from article_separation.gnn.input.create_input_and_target import get_input_and_target_from_json,\
     get_input_and_target_from_xml
-from citlab_python_util.image_processing.image_resizer import resize_image_ratio
+from python_util.image_processing.image_resizer import resize_image_ratio
 
 
 class InputGNN(object):

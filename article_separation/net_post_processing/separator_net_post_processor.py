@@ -2,17 +2,17 @@ import argparse
 
 import numpy as np
 import cv2
-from citlab_python_util.io.file_loader import get_page_path
+from python_util.io.file_loader import get_page_path
 from scipy.ndimage.interpolation import rotate
 from PIL import Image
 
-from citlab_article_separation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
+from article_separation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
     get_net_output, apply_threshold
 
-from citlab_article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
-from citlab_article_separation.net_post_processing.separator_region_to_page_writer import SeparatorRegionToPageWriter
-from citlab_python_util.logging import custom_logging
-from citlab_python_util.parser.xml.page.page_constants import sSEPARATORREGION
+from article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
+from article_separation.net_post_processing.separator_region_to_page_writer import SeparatorRegionToPageWriter
+from python_util.logging import custom_logging
+from python_util.parser.xml.page.page_constants import sSEPARATORREGION
 
 logger = custom_logging.setup_custom_logger("SeparatorNetPostProcessor", level="info")
 

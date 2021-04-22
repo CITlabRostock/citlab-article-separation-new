@@ -3,7 +3,7 @@ import os
 import logging
 import argparse
 import multiprocessing as mp
-from citlab_python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.page import Page
 
 
 def generate_prediction_json(xml_files, json_path):

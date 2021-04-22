@@ -3,15 +3,15 @@ from collections import Counter
 
 import numpy as np
 
-from citlab_article_separation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
+from article_separation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
     get_net_output
-from citlab_article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
-from citlab_article_separation.net_post_processing.region_to_page_writer import RegionToPageWriter
-from citlab_python_util.image_processing.swt_dist_trafo import StrokeWidthDistanceTransform
-from citlab_python_util.io.file_loader import get_page_path
-from citlab_python_util.logging.custom_logging import setup_custom_logger
-from citlab_python_util.parser.xml.page.page_constants import TextRegionTypes
-from citlab_python_util.parser.xml.page.page_objects import TextLine
+from article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
+from article_separation.net_post_processing.region_to_page_writer import RegionToPageWriter
+from python_util.image_processing.swt_dist_trafo import StrokeWidthDistanceTransform
+from python_util.io.file_loader import get_page_path
+from python_util.logging.custom_logging import setup_custom_logger
+from python_util.parser.xml.page.page_constants import TextRegionTypes
+from python_util.parser.xml.page.page_objects import TextLine
 
 logger = setup_custom_logger("HeadingNetPostProcessor", "info")
 

@@ -2,15 +2,15 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PolyCollection
 import jpype
 
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.basic.list_util import filter_by_attribute
-from citlab_article_separation.util import get_article_rectangles_from_surr_polygons, smooth_article_surrounding_polygons, \
+from python_util.parser.xml.page.page import Page
+from python_util.basic.list_util import filter_by_attribute
+from article_separation.util import get_article_rectangles_from_surr_polygons, smooth_article_surrounding_polygons, \
     convert_blank_article_rects_by_rects, \
     convert_blank_article_rects_by_polys
-from citlab_python_util.geometry.rectangle import Rectangle
-from citlab_python_util.geometry.util import ortho_connect, convex_hull, bounding_box
-from citlab_python_util.parser.xml.page import plot as page_plot
-from citlab_python_util.plot import colors
+from python_util.geometry.rectangle import Rectangle
+from python_util.geometry.util import ortho_connect, convex_hull, bounding_box
+from python_util.parser.xml.page import plot as page_plot
+from python_util.plot import colors
 
 
 def plot_gt_data(img_path, poly_dict, poly_smooth_dict, show=True):

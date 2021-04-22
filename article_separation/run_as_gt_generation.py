@@ -6,14 +6,14 @@ import jpype
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image, ImageDraw
-from citlab_python_util.geometry.point import rescale_points
-from citlab_python_util.image_processing.morphology import apply_transform
-from citlab_python_util.parser.xml.page import plot as page_plot
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.plot import colors
+from python_util.geometry.point import rescale_points
+from python_util.image_processing.morphology import apply_transform
+from python_util.parser.xml.page import plot as page_plot
+from python_util.parser.xml.page.page import Page
+from python_util.plot import colors
 from matplotlib.collections import PolyCollection
 
-from citlab_article_separation.util import get_article_rectangles_from_baselines, merge_article_rectangles_vertically
+from article_separation.util import get_article_rectangles_from_baselines, merge_article_rectangles_vertically
 
 
 def plot_gt_data(img_path, surr_polys_dict, show=True):

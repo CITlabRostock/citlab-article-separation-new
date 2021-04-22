@@ -6,9 +6,9 @@ import jpype
 import collections
 import numpy as np
 
-from citlab_python_util.geometry.rectangle import Rectangle
-from citlab_python_util.geometry.util import calc_reg_line_stats, get_dist_fast, get_in_dist, get_off_dist
-from citlab_python_util.geometry.polygon import Polygon, norm_poly_dists
+from python_util.geometry.rectangle import Rectangle
+from python_util.geometry.util import calc_reg_line_stats, get_dist_fast, get_in_dist, get_off_dist
+from python_util.geometry.polygon import Polygon, norm_poly_dists
 
 
 def get_list_of_scaled_polygons(lst_of_polygons, scaling_factor=1):
@@ -46,7 +46,7 @@ def get_list_of_interline_distances(lst_of_polygons, des_dist=5, max_d=500, use_
 
     # call java code to calculate the interline distances
     if use_java_code:
-        java_object = jpype.JPackage("citlab_article_separation.java").Util()
+        java_object = jpype.JPackage("article_separation.java").Util()
 
         lst_of_normed_polygon_java = []
 

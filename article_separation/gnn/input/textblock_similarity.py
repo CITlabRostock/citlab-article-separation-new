@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
     ############################################################
     page_path = "/home/johannes/devel/data/NewsEye_GT/AS_BC/NewsEye_ONB_232_textblocks/274954/ONB_ibn_19110701_corrected_duplicated/page/ONB_ibn_19110701_009.xml"
-    from citlab_python_util.parser.xml.page.page import Page
+    from python_util.parser.xml.page.page import Page
     page_file = Page(page_path)
     regions = page_file.get_regions()
     text_regions = regions['TextRegion']

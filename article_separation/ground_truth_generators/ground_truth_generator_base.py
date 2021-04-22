@@ -7,8 +7,8 @@ from copy import deepcopy
 import cv2
 import numpy as np
 from PIL import Image, ImageDraw
-from citlab_python_util.geometry.point import rescale_points
-from citlab_python_util.parser.xml.page.page import Page
+from python_util.geometry.point import rescale_points
+from python_util.parser.xml.page.page import Page
 
 logger = logging.getLogger("GroundTruthGenerator")
 

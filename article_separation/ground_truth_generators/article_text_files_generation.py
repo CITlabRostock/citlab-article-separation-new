@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from citlab_python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.page import Page
 
 
 def create_text_file_from_page(page: Page, path_to_save_file=None):

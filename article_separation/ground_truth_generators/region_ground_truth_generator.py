@@ -5,10 +5,10 @@ import os
 
 import cv2
 import numpy as np
-from citlab_python_util.parser.xml.page import page_constants
-from citlab_python_util.io.path_util import prepend_folder_name
+from python_util.parser.xml.page import page_constants
+from python_util.io.path_util import prepend_folder_name
 
-from citlab_article_separation.ground_truth_generators.ground_truth_generator_base import GroundTruthGenerator
+from article_separation.ground_truth_generators.ground_truth_generator_base import GroundTruthGenerator
 
 logger = logging.getLogger("TextBlockGroundTruthGenerator")
 logging.basicConfig(level=logging.WARNING)

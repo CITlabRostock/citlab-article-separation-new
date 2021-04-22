@@ -10,12 +10,12 @@ from scipy.spatial.qhull import QhullError
 from shapely.geometry import LineString
 import multiprocessing as mp
 
-from citlab_python_util.math.rounding import round_by_precision_and_base as round_base
-from citlab_python_util.io.path_util import get_img_from_page_path
-from citlab_article_separation.gnn.input.textblock_similarity import TextblockSimilarity
-from citlab_python_util.image_processing.swt_dist_trafo import StrokeWidthDistanceTransform
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.geometry.util import convex_hull, bounding_box
+from python_util.math.rounding import round_by_precision_and_base as round_base
+from python_util.io.path_util import get_img_from_page_path
+from article_separation.gnn.input.textblock_similarity import TextblockSimilarity
+from python_util.image_processing.swt_dist_trafo import StrokeWidthDistanceTransform
+from python_util.parser.xml.page.page import Page
+from python_util.geometry.util import convex_hull, bounding_box
 
 
 def get_text_region_geometric_features(text_region, norm_x, norm_y):

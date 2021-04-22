@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-import citlab_python_util.preprocessing.page_preprocessing as page_preprocessing
+import python_util.preprocessing.page_preprocessing as page_preprocessing
 
 if __name__ == '__main__':
     parser = ArgumentParser()

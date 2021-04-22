@@ -7,7 +7,7 @@ from multiprocessing.pool import ThreadPool
 
 def worker(sample, counter, flags, skipped_files):
     my_tool_subprocess = \
-        subprocess.Popen(["python", "citlab_article_separation/baseline_clustering/baseline_clustering.py",
+        subprocess.Popen(["python", "article_separation/baseline_clustering/baseline_clustering.py",
                           "--path_to_xml_file", sample,
                           "--min_polygons_for_cluster", str(flags.min_polygons_for_cluster),
                           "--min_polygons_for_article", str(flags.min_polygons_for_article),

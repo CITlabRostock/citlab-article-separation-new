@@ -2,8 +2,8 @@ import argparse
 import os
 import logging
 
-from citlab_python_util.parser.xml.page.page import Page
-import citlab_python_util.parser.xml.page.page_constants as page_constants
+from python_util.parser.xml.page.page import Page
+import python_util.parser.xml.page.page_constants as page_constants
 
 
 def get_page_stats(path_to_pagexml, region_stats=True, text_line_stats=True, article_stats=True):

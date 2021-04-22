@@ -7,12 +7,12 @@ import rasterio.features
 from PIL import Image
 from matplotlib.collections import PolyCollection
 
-from citlab_article_separation.net_post_processing.net_post_processing_helper import load_image_paths, \
+from article_separation.net_post_processing.net_post_processing_helper import load_image_paths, \
     load_and_scale_image, load_graph, get_net_output, apply_threshold
-from citlab_python_util.geometry.point import rescale_points
-from citlab_python_util.geometry.util import alpha_shape
-from citlab_python_util.io.file_loader import get_page_path
-from citlab_python_util.parser.xml.page.plot import plot_pagexml
+from python_util.geometry.point import rescale_points
+from python_util.geometry.util import alpha_shape
+from python_util.io.file_loader import get_page_path
+from python_util.parser.xml.page.plot import plot_pagexml
 
 
 class RegionNetPostProcessor(ABC):

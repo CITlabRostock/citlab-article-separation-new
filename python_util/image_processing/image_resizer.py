@@ -4,10 +4,10 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
-from citlab_python_util.basic import shape_utils
-from citlab_python_util.io.file_loader import load_image
-from citlab_python_util.io.file_loader import load_list_file
-from citlab_python_util.logging import custom_logging
+from python_util.basic import shape_utils
+from python_util.io.file_loader import load_image
+from python_util.io.file_loader import load_list_file
+from python_util.logging import custom_logging
 
 logger = custom_logging.setup_custom_logger("ImageResizer", "info")
 

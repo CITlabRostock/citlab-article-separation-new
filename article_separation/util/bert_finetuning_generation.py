@@ -3,7 +3,7 @@ import os
 import argparse
 import logging
 import numpy as np
-from citlab_python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.page import Page
 
 
 def generate_finetuning_json(page_paths, json_path):

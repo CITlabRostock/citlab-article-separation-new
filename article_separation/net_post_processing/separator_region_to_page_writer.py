@@ -3,9 +3,9 @@ from copy import deepcopy
 import numpy as np
 from shapely import geometry, validation
 
-from citlab_article_separation.net_post_processing.region_to_page_writer import RegionToPageWriter
-from citlab_python_util.parser.xml.page.page_constants import sSEPARATORREGION, sTEXTREGION
-from citlab_python_util.parser.xml.page.page_objects import SeparatorRegion
+from article_separation.net_post_processing.region_to_page_writer import RegionToPageWriter
+from python_util.parser.xml.page.page_constants import sSEPARATORREGION, sTEXTREGION
+from python_util.parser.xml.page.page_objects import SeparatorRegion
 
 
 class SeparatorRegionToPageWriter(RegionToPageWriter):

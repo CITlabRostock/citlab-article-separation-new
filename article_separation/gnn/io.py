@@ -12,10 +12,10 @@ from scipy.stats import gmean
 from copy import deepcopy
 import networkx as nx
 
-from citlab_python_util.parser.xml.page.page import Page
-import citlab_python_util.parser.xml.page.plot as plot_util
-from citlab_article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
-from citlab_python_util.io.path_util import *
+from python_util.parser.xml.page.page import Page
+import python_util.parser.xml.page.plot as plot_util
+from article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
+from python_util.io.path_util import *
 
 
 def build_weighted_relation_graph(edges, weights, feature_dicts=None):
@@ -279,7 +279,7 @@ def plot_graph_clustering_and_page(graph, node_features, page_path, cluster_path
 #     img_path = get_img_from_page_path(page_path)
 #     cluster_page = Page(cluster_path)
 #
-#     from citlab_article_separation.gnn.input.feature_generation import delaunay_edges, get_data_from_pagexml
+#     from article_separation.gnn.input.feature_generation import delaunay_edges, get_data_from_pagexml
 #     num_nodes = len(graph.nodes)
 #     _, _, _, _, resolution = get_data_from_pagexml(page_path)
 #     norm_x, norm_y = float(resolution[0]), float(resolution[1])

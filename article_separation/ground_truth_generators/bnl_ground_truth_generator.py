@@ -1,6 +1,6 @@
 import argparse
 
-from citlab_article_separation.ground_truth_generators.region_ground_truth_generator import \
+from article_separation.ground_truth_generators.region_ground_truth_generator import \
     RegionGroundTruthGenerator
 
 

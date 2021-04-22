@@ -2,7 +2,7 @@ import jpype
 
 
 def get_java_util_object():
-    return jpype.JPackage("citlab_python_util.external.java").Util()
+    return jpype.JPackage("python_util.external.java").Util()
 
 
 def test():

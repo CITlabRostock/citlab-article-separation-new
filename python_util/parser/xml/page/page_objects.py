@@ -3,9 +3,9 @@ import numpy as np
 import logging
 from lxml import etree
 
-import citlab_python_util.parser.xml.page.page_constants as page_const
-from citlab_python_util.geometry.polygon import Polygon
-from citlab_python_util.parser.xml.page import page_util
+import python_util.parser.xml.page.page_constants as page_const
+from python_util.geometry.polygon import Polygon
+from python_util.parser.xml.page import page_util
 
 
 def polygon_to_points(polygon):

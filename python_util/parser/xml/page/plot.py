@@ -10,9 +10,9 @@ from PIL import Image, ImageFile
 from matplotlib import colors as mcolors
 from matplotlib.collections import PolyCollection
 
-from citlab_python_util.geometry.polygon import Polygon
-from citlab_python_util.parser.xml.page import page_constants
-from citlab_python_util.parser.xml.page.page import Page
+from python_util.geometry.polygon import Polygon
+from python_util.parser.xml.page import page_constants
+from python_util.parser.xml.page.page import Page
 
 from matplotlib.pyplot import *
 

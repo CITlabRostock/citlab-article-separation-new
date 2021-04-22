@@ -4,13 +4,13 @@ import jpype
 import numpy as np
 from argparse import ArgumentParser
 
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.parser.xml.page.page_objects import TextRegion, Points
+from python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.page_objects import TextRegion, Points
 
-from citlab_python_util.geometry.util import alpha_shape
-from citlab_python_util.geometry.polygon import norm_poly_dists
+from python_util.geometry.util import alpha_shape
+from python_util.geometry.polygon import norm_poly_dists
 
-from citlab_article_separation.baseline_clustering.dbscan_baselines import get_list_of_interline_distances
+from article_separation.baseline_clustering.dbscan_baselines import get_list_of_interline_distances
 
 
 def get_data_from_pagexml(path_to_pagexml, des_dist=50, max_d=500, use_java_code=True):

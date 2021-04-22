@@ -4,10 +4,10 @@ import os
 import numpy as np
 from sklearn.metrics import f1_score, recall_score, precision_score
 
-from citlab_article_separation.net_post_processing.heading_net_post_processor import HeadingNetPostProcessor
-from citlab_python_util.io.file_loader import load_list_file, get_page_path
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.parser.xml.page.page_constants import TextRegionTypes
+from article_separation.net_post_processing.heading_net_post_processor import HeadingNetPostProcessor
+from python_util.io.file_loader import load_list_file, get_page_path
+from python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.page_constants import TextRegionTypes
 
 
 def get_heading_regions(page_object: Page):
@@ -25,7 +25,7 @@ def get_heading_text_lines(heading_regions):
 def get_heading_text_line_by_custom_type(heading_regions):
     text_lines = []
     for heading_region in heading_regions:
-        from citlab_python_util.parser.xml.page.page_objects import TextLine
+        from python_util.parser.xml.page.page_objects import TextLine
         text_line: TextLine
         for text_line in heading_region.text_lines:
             try:

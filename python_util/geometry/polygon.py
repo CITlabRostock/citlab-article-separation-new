@@ -1,9 +1,9 @@
 import math
 
-from citlab_python_util.geometry import linear_regression as lin_reg
-from citlab_python_util.geometry.point import rescale_points
-from citlab_python_util.geometry.rectangle import Rectangle
-from citlab_python_util.math.rounding import round_to_nearest_integer
+from python_util.geometry import linear_regression as lin_reg
+from python_util.geometry.point import rescale_points
+from python_util.geometry.rectangle import Rectangle
+from python_util.math.rounding import round_to_nearest_integer
 
 
 class Polygon(object):

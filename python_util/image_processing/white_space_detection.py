@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
-from citlab_python_util.geometry import rectangle as rect
+from python_util.geometry import rectangle as rect
 
 
 def get_binarization(image_path, show_binarized_image=False):

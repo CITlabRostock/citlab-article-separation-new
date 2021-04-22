@@ -2,10 +2,10 @@
 
 import jpype
 import numpy as np
-from citlab_python_util.geometry.polygon import norm_poly_dists, Polygon
-from citlab_python_util.geometry.util import calc_tols
+from python_util.geometry.polygon import norm_poly_dists, Polygon
+from python_util.geometry.util import calc_tols
 
-from citlab_article_separation_measure.baseline_measure import BaselineMeasure
+from article_separation_measure.baseline_measure import BaselineMeasure
 
 
 class BaselineMeasureEval(object):
@@ -52,7 +52,7 @@ class BaselineMeasureEval(object):
             for poly in polys_reco:
                 polys_reco_java.append(jpype.java.awt.Polygon(poly.x_points, poly.y_points, poly.n_points))
 
-            java_object = jpype.JPackage("citlab_article_separation_measure.external.java").Util()
+            java_object = jpype.JPackage("article_separation_measure.external.java").Util()
 
             pr_list = \
                 java_object.calcMetricForPageBaseLinePolys(polys_truth_java, polys_reco_java,

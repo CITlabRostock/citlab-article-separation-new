@@ -3,7 +3,7 @@ import numpy as np
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.cluster import dbscan
 from scipy.stats import gmean
-from citlab_article_separation.gnn.clustering.dbscan import DBScanRelation
+from article_separation.gnn.clustering.dbscan import DBScanRelation
 
 
 class TextblockClustering(object):

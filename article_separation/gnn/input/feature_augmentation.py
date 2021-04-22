@@ -135,11 +135,11 @@ def translation_noise(node_features, mean_coherent=0.0, std_coherent=0.01, mean_
 
 
 if __name__ == '__main__':
-    from citlab_article_separation.gnn.run_gnn_clustering import plot_graph_and_page, create_undirected_graph, \
+    from article_separation.gnn.run_gnn_clustering import plot_graph_and_page, create_undirected_graph, \
         build_weighted_relation_graph
-    from citlab_python_util.io.path_util import get_img_from_page_path
-    from citlab_python_util.parser.xml.page.page import Page
-    from citlab_article_separation.gnn.input.feature_generation import build_input_and_target_bc
+    from python_util.io.path_util import get_img_from_page_path
+    from python_util.parser.xml.page.page import Page
+    from article_separation.gnn.input.feature_generation import build_input_and_target_bc
 
     save_dir = "/home/johannes/devel/debug/augmentation"
     page_path = "/home/johannes/devel/data/NewsEye_GT/AS_BC/NewsEye_ONB_232_textblocks/274954/" \

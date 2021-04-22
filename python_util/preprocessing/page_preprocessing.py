@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 from shutil import copyfile
 
-import citlab_python_util.parser.xml.page.page as page
-from citlab_python_util.basic.list_util import filter_by_attribute
-from citlab_python_util.io import file_loader
+import python_util.parser.xml.page.page as page
+from python_util.basic.list_util import filter_by_attribute
+from python_util.io import file_loader
 
 BATCH_SIZE = 100
 

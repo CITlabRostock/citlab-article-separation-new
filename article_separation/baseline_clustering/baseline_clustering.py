@@ -3,8 +3,8 @@
 import jpype
 from argparse import ArgumentParser
 
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_article_separation.baseline_clustering import dbscan_baselines
+from python_util.parser.xml.page.page import Page
+from article_separation.baseline_clustering import dbscan_baselines
 
 
 def get_data_from_pagexml(path_to_pagexml):

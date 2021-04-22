@@ -6,10 +6,10 @@ from copy import deepcopy
 
 import matplotlib.pyplot as plt
 
-from citlab_python_util.geometry.polygon import string_to_poly, are_vertical_aligned
-from citlab_python_util.parser.xml.page import plot
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_python_util.parser.xml.page.plot import COLORS
+from python_util.geometry.polygon import string_to_poly, are_vertical_aligned
+from python_util.parser.xml.page import plot
+from python_util.parser.xml.page.page import Page
+from python_util.parser.xml.page.plot import COLORS
 
 
 def are_vertically_close(poly1, poly2, min_dist_x=200, max_dist_x=1750, max_dist_y=100):

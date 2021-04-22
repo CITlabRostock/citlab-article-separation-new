@@ -9,14 +9,14 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
-import citlab_python_util.basic.flags as flags
-from citlab_article_separation.gnn.input.input_dataset import InputGNN
-from citlab_article_separation.gnn.clustering.textblock_clustering import TextblockClustering
-from citlab_article_separation.gnn.io import plot_graph_clustering_and_page, save_clustering_to_page, \
+import python_util.basic.flags as flags
+from article_separation.gnn.input.input_dataset import InputGNN
+from article_separation.gnn.clustering.textblock_clustering import TextblockClustering
+from article_separation.gnn.io import plot_graph_clustering_and_page, save_clustering_to_page, \
     save_conf_to_json, build_thresholded_relation_graph
-from citlab_python_util.io.path_util import *
-from citlab_python_util.parser.xml.page.page import Page
-from citlab_article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
+from python_util.io.path_util import *
+from python_util.parser.xml.page.page import Page
+from article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
 
 
 # General

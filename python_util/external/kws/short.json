@@ -1,0 +1,227 @@
+{
+  "keywords": [
+    {
+      "kw": "R[ÜU]CKWANDER[A-Z]*",
+      "pos": [
+        {
+          "conf": 0.3145040724465509,
+          "bl": "739,364 3403,381",
+          "line": "r1l4",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920513/storage/18920513_8.jpg/container.bin"
+        },
+        {
+          "conf": 0.2666996732757259,
+          "bl": "155,2937 1208,2950",
+          "line": "r2l215",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920318/storage/18920318_8.jpg/container.bin"
+        }
+      ],
+      "time": 158322
+    },
+    {
+      "kw": "R[ÜU]CKKEHRER[A-Z]*",
+      "pos": [
+        {
+          "conf": 0.32750013524870103,
+          "bl": "1470,3698 1606,3697",
+          "line": "r1l149",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910703/storage/18910703_1.jpg/container.bin"
+        },
+        {
+          "conf": 0.31946317991426115,
+          "bl": "1369,368 3403,381",
+          "line": "r1l4",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920513/storage/18920513_8.jpg/container.bin"
+        }
+      ],
+      "time": 147271
+    },
+    {
+      "kw": "HEIMGEKEHRTE[A-Z]*",
+      "pos": [
+        {
+          "conf": 0.3518747294994744,
+          "bl": "2141,2008 2372,2008",
+          "line": "r1l79",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910522/storage/18910522_6.jpg/container.bin"
+        },
+        {
+          "conf": 0.31035452670081876,
+          "bl": "332,3724 527,3725",
+          "line": "r1l154",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910612/storage/18910612_5.jpg/container.bin"
+        }
+      ],
+      "time": 148025
+    },
+    {
+      "kw": "(ZU)?R[ÜU]CK(GE)?KEHR(T|(EN))?",
+      "pos": [
+        {
+          "conf": 0.999796567069996,
+          "bl": "3070,1793 3251,1796",
+          "line": "r3l45",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920325/storage/18920325_4.jpg/container.bin"
+        },
+        {
+          "conf": 0.9997457153042234,
+          "bl": "1291,4803 1444,4801",
+          "line": "r2l105",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920311/storage/18920311_9.jpg/container.bin"
+        }
+      ],
+      "time": 140102
+    },
+    {
+      "kw": "HEIMATH?",
+      "pos": [
+        {
+          "conf": 0.9997139342640445,
+          "bl": "2085,3099 2209,3099",
+          "line": "r1l157",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910313/storage/18910313_9.jpg/container.bin"
+        },
+        {
+          "conf": 0.999673074411177,
+          "bl": "2282,1978 2404,1979",
+          "line": "r3l43",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920219/storage/18920219_4.jpg/container.bin"
+        }
+      ],
+      "time": 133288
+    },
+    {
+      "kw": "FL[UÜ]CHTLINGE?",
+      "pos": [
+        {
+          "conf": 0.9975061838830578,
+          "bl": "223,4209 406,4211",
+          "line": "r1l178",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910508/storage/18910508_6.jpg/container.bin"
+        },
+        {
+          "conf": 0.9817196063417618,
+          "bl": "216,4247 411,4245",
+          "line": "r1l183",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18911009/storage/18911009_6.jpg/container.bin"
+        }
+      ],
+      "time": 137148
+    },
+    {
+      "kw": "AUSWANDERER[A-Z]*",
+      "pos": [
+        {
+          "conf": 0.2666458341724521,
+          "bl": "1761,2414 2709,2426",
+          "line": "r1l279",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910925/storage/18910925_8.jpg/container.bin"
+        },
+        {
+          "conf": 0.24793038393977956,
+          "bl": "309,2943 1208,2950",
+          "line": "r2l215",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920318/storage/18920318_8.jpg/container.bin"
+        }
+      ],
+      "time": 148658
+    },
+    {
+      "kw": "EMIGRANT[A-Z]*",
+      "pos": [
+        {
+          "conf": 0.9766937606447382,
+          "bl": "190,3386 376,3388",
+          "line": "r1l87",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920701/storage/18920701_4.jpg/container.bin"
+        },
+        {
+          "conf": 0.9690015451994701,
+          "bl": "2394,3780 2650,3780",
+          "line": "r1l153",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910703/storage/18910703_1.jpg/container.bin"
+        }
+      ],
+      "time": 145672
+    },
+    {
+      "kw": "(Ö|(OE?))STERREICH",
+      "pos": [
+        {
+          "conf": 0.9995306018357532,
+          "bl": "766,3556 929,3560",
+          "line": "r1l171",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910220/storage/18910220_12.jpg/container.bin"
+        },
+        {
+          "conf": 0.9995306018357532,
+          "bl": "423,3698 582,3695",
+          "line": "r1l103",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920401/storage/18920401_6.jpg/container.bin"
+        },
+        {
+          "conf": 0.9996948661248791,
+          "bl": "755,990 954,989",
+          "line": "r1l34",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910410/storage/18910410_2.jpg/container.bin"
+        }
+      ],
+      "time": 138041
+    },
+    {
+      "kw": "MUTTERLAND",
+      "pos": [
+        {
+          "conf": 0.9968894641348315,
+          "bl": "412,481 585,483",
+          "line": "r1l6",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920610/storage/18920610_6.jpg/container.bin"
+        },
+        {
+          "conf": 0.12871215166097993,
+          "bl": "3072,4341 3234,4347",
+          "line": "r1l360",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920506/storage/18920506_8.jpg/container.bin"
+        }
+      ],
+      "time": 137000
+    },
+    {
+      "kw": "SOLDAT[A-Z]*",
+      "pos": [
+        {
+          "conf": 0.9999152312492031,
+          "bl": "2530,2377 2681,2379",
+          "line": "r1l95",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910508/storage/18910508_2.jpg/container.bin"
+        },
+        {
+          "conf": 0.9996948661248791,
+          "bl": "785,990 914,989",
+          "line": "r1l34",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18910410/storage/18910410_2.jpg/container.bin"
+        }
+      ],
+      "time": 149525
+    },
+    {
+      "kw": "GEFANGENSCHAFT",
+      "pos": [
+        {
+          "conf": 0.21928858557024972,
+          "bl": "1939,2395 2109,2398",
+          "line": "r1l219",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920527/storage/18920527_8.jpg/container.bin"
+        },
+        {
+          "conf": 0.12649534340004578,
+          "bl": "3011,4491 3299,4496",
+          "line": "r1l559",
+          "image": "/home/gundram/devel/projects/zeitung/data/aze_out/18920603/storage/18920603_8.jpg/container.bin"
+        }
+      ],
+      "time": 137086
+    }
+  ],
+  "time": 3218148
+}

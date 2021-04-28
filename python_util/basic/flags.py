@@ -140,6 +140,11 @@ def define_float(flag_name, default_value, docstring, metavar="FLOAT"):
     _define_helper(flag_name, default_value, docstring, float, metavar)
 
 
+# Register a custom function for 'bool' so --flag=True works.
+def str2bool(v):
+    return v.lower() in ('true', 't', '1')
+
+
 def define_boolean(flag_name, default_value, docstring, metavar="BOOL"):
     """
     Defines a flag of type 'boolean'.
@@ -150,11 +155,6 @@ def define_boolean(flag_name, default_value, docstring, metavar="BOOL"):
         docstring: `str`, a helpful message explaining the use of the flag.
         metavar: `str`, a name for the argument in usage messages.
     """
-
-    # Register a custom function for 'bool' so --flag=True works.
-    def str2bool(v):
-        return v.lower() in ('true', 't', '1')
-
     global_parser.add_argument('--' + flag_name,
                                nargs='?',
                                const=True,

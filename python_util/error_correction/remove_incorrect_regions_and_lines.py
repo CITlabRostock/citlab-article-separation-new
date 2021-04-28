@@ -1,9 +1,11 @@
+import sys
 import logging
-from python_util.parser.xml.page.page import Page
-from article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
 from tqdm import tqdm
 from argparse import ArgumentParser
-import sys
+
+from python_util.basic.flags import str2bool
+from python_util.parser.xml.page.page import Page
+from article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
 
 logger = logging.getLogger()
 logger.setLevel("DEBUG")
@@ -70,9 +72,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--page_path_list', default='', type=str, metavar="STR",
                         help="path to the lst file containing the file paths of the PageXmls")
-    parser.add_argument('--overwrite', default=False, type=bool,
-                        help="If true, it overwrites the page xml files modified by the preprocessor. "
-                             "Defaults to False.")
+    parser.add_argument('--overwrite', nargs='?', const=True, default=False, type=str2bool,
+                        help="If true, overwrites page xml files modified by the preprocessor (default: False).")
 
     flags = parser.parse_args()
     page_path_list = flags.page_path_list

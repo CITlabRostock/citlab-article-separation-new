@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import jpype
+import logging
 from argparse import ArgumentParser
 
 from python_util.parser.xml.page.page import Page
 from article_separation.baseline_clustering import dbscan_baselines
+from python_util.basic.flags import str2bool
 
 
 def get_data_from_pagexml(path_to_pagexml):
@@ -28,7 +30,7 @@ def get_data_from_pagexml(path_to_pagexml):
             if len(baseline.x_points) == len(baseline.y_points) > 1:
                 lst_of_polygons.append(txtline.baseline.to_polygon())
                 lst_of_txtlines_adjusted.append(txtline)
-        except(AttributeError):
+        except AttributeError:
             # print("'NoneType' object in PAGEXML with id {} has no attribute 'to_polygon'!\n".format(txtline.id))
             continue
 
@@ -89,47 +91,55 @@ def cluster_baselines_dbscan(list_of_polygons, min_polygons_for_cluster=2, min_p
 
 
 if __name__ == "__main__":
+    logging.getLogger().setLevel("INFO")
     parser = ArgumentParser()
     # command-line arguments
     parser.add_argument('--path_to_xml_file', type=str, required=True,
                         help="path to the page xml file to be processed")
-
     parser.add_argument('--min_polygons_for_cluster', type=int, default=2,
                         help="minimum number of required polygons in neighborhood to form a cluster")
     parser.add_argument('--min_polygons_for_article', type=int, default=1,
                         help="minimum number of required polygons forming an article")
-
     parser.add_argument('--rectangle_interline_factor', type=float, default=1.25,
                         help="multiplication factor to calculate the height of the rectangles during the clustering "
                              "progress with the help of the interline distances")
-
     parser.add_argument('--des_dist', type=int, default=5,
                         help="desired distance (measured in pixels) of two adjacent pixels in the normed polygons")
     parser.add_argument('--max_d', type=int, default=500,
                         help="maximum distance (measured in pixels) for the calculation of the interline distances")
-    parser.add_argument('--use_java_code', type=bool, default=True,
+    parser.add_argument('--use_java_code', nargs='?', const=True, default=False, type=str2bool,
                         help="usage of methods written in java (faster than python!) or not")
-    parser.add_argument('--target_average_interline_distance', type=int, default=50,
-                        help="target interline distance for scaling of the polygons")
+    parser.add_argument('--target_avg_interline_distance', type=int, default=50,
+                        help="target average interline distance for scaling of the polygons")
 
-    flags = parser.parse_args()
+    args = parser.parse_args()
+
+    logging.info("Baseline clustering setup:")
+    logging.info(f"  -path_to_xml_file: {args.path_to_xml_file}")
+    logging.info(f"  -min_polygons_for_cluster: {args.min_polygons_for_cluster}")
+    logging.info(f"  -min_polygons_for_article: {args.min_polygons_for_article}")
+    logging.info(f"  -rectangle_interline_factor: {args.rectangle_interline_factor}")
+    logging.info(f"  -des_dist: {args.des_dist}")
+    logging.info(f"  -max_d: {args.max_d}")
+    logging.info(f"  -use_java_code: {args.use_java_code}")
+    logging.info(f"  -target_avg_interline_distance: {args.target_avg_interline_distance}")
 
     # start java virtual machine to be able to execute the java code
     jpype.startJVM(jpype.getDefaultJVMPath())
 
-    xml_file = flags.path_to_xml_file
-    print(xml_file)
+    xml_file = args.path_to_xml_file
     lst_polygons, lst_txtlines = get_data_from_pagexml(path_to_pagexml=xml_file)
 
     article_id_list = cluster_baselines_dbscan(list_of_polygons=lst_polygons,
-                                               min_polygons_for_cluster=flags.min_polygons_for_cluster,
-                                               min_polygons_for_article=flags.min_polygons_for_article,
-                                               rectangle_interline_factor=flags.rectangle_interline_factor,
-                                               des_dist=flags.des_dist, max_d=flags.max_d,
-                                               use_java_code=flags.use_java_code,
-                                               target_average_interline_distance=flags.target_average_interline_distance)
+                                               min_polygons_for_cluster=args.min_polygons_for_cluster,
+                                               min_polygons_for_article=args.min_polygons_for_article,
+                                               rectangle_interline_factor=args.rectangle_interline_factor,
+                                               des_dist=args.des_dist,
+                                               max_d=args.max_d,
+                                               use_java_code=args.use_java_code,
+                                               target_average_interline_distance=args.target_avg_interline_distance)
 
-    # TODO: except?
+    # save in place (overwriting)
     save_results_in_pagexml(path_to_pagexml=xml_file, list_of_txtlines=lst_txtlines,
                             list_of_txtline_labels=article_id_list)
 

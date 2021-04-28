@@ -4,6 +4,8 @@ import subprocess
 from argparse import ArgumentParser
 from multiprocessing.pool import ThreadPool
 
+from python_util.basic.flags import str2bool
+
 
 def worker(sample, counter, flags, skipped_files):
     my_tool_subprocess = \
@@ -45,9 +47,8 @@ if __name__ == "__main__":
     parser.add_argument('--alpha', type=float, default=75,
                         help="alpha value for the alpha shape algorithm "
                              "(for alpha -> infinity we get the convex hulls, recommended: alpha >= des_dist)")
-    parser.add_argument('--use_java_code', type=bool, default=True,
+    parser.add_argument('--use_java_code', nargs='?', const=True, default=False, type=str2bool,
                         help="usage of methods written in java (faster than python!) or not")
-
     parser.add_argument('--num_threads', type=int, default=1,
                         help="number of threads used for the computation")
 

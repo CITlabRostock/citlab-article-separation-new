@@ -4,6 +4,7 @@ import logging
 import numpy as np
 
 from python_util.parser.xml.page.page import Page
+from python_util.basic.flags import str2bool
 
 
 def overwrite_article_ids(page_list, gt_list):
@@ -251,10 +252,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--in_list', help="Input list with paths to pagexml files", required=True)
     parser.add_argument('--gt_list', help="GT list with paths to corresponding pagexml files", required=True)
-    parser.add_argument('--clean_regions', type=bool, default=False, metavar="BOOL",
+    parser.add_argument('--clean_regions', nargs='?', const=True, default=False, type=str2bool,
                         help="Clean regions with missing textlines or article_ids (default: False)")
-    parser.add_argument('--overwrite_by_region', type=bool, default=True, metavar="BOOL",
+    parser.add_argument('--overwrite_by_region', nargs='?', const=True, default=True, type=str2bool,
                         help="Overwrite article IDs by region or by lines if clean_regions is False (default: True)")
+
     args = parser.parse_args()
 
     if args.clean_regions is True:

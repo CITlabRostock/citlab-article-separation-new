@@ -4,8 +4,9 @@ import jpype
 import numpy as np
 import os
 from argparse import ArgumentParser
-from python_util.parser.xml.page.page import Page
 
+from python_util.basic.flags import str2bool
+from python_util.parser.xml.page.page import Page
 from python_util.math.measure import f_measure
 from article_separation_measure.eval_measure import BaselineMeasureEval
 
@@ -364,7 +365,7 @@ if __name__ == "__main__":
                         help="fraction of estimated interline distance as tolerance values")
     parser.add_argument('--poly_tick_dist', type=int, default=5,
                         help="desired distance (measured in pixels) of two adjacent pixels in the normed polygons")
-    parser.add_argument('--verbose', type=bool, default=True,
+    parser.add_argument('--verbose', nargs='?', const=True, default=True, type=str2bool,
                         help="print evaluation for every single file in addition to overall summary")
 
     flags = parser.parse_args()

@@ -3,6 +3,8 @@ import argparse
 from article_separation.ground_truth_generators.region_ground_truth_generator import \
     RegionGroundTruthGenerator
 
+from python_util.basic.flags import str2bool
+
 
 class BNLGroundTruthGeneratorHeaders(RegionGroundTruthGenerator):
     def __init__(self, path_to_img_lst, max_resolution=(0, 0), scaling_factor=1.0, use_bounding_box=False,
@@ -86,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_width', type=int, default=0)
     parser.add_argument('--scaling_factor', type=float, default=1.0)
     parser.add_argument('--newspaper_issue', type=str, choices=['luxwort', 'independance_lux'])
-    parser.add_argument('--save_info_file', type=bool, default=True)
+    parser.add_argument('--save_info_file', nargs='?', const=True, default=True, type=str2bool)
 
     args = parser.parse_args()
 

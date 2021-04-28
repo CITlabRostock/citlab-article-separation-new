@@ -4,6 +4,7 @@ import jpype
 import numpy as np
 from argparse import ArgumentParser
 
+from python_util.basic.flags import str2bool
 from python_util.parser.xml.page.page import Page
 from python_util.parser.xml.page.page_objects import TextRegion, Points
 
@@ -202,8 +203,9 @@ if __name__ == "__main__":
     parser.add_argument('--alpha', type=float, default=75,
                         help="alpha value for the alpha shape algorithm "
                              "(for alpha -> infinity we get the convex hulls, recommended: alpha >= des_dist)")
-    parser.add_argument('--use_java_code', type=bool, default=True,
+    parser.add_argument('--use_java_code', nargs='?', const=True, default=False, type=str2bool,
                         help="usage of methods written in java (faster than python!) or not")
+
 
     flags = parser.parse_args()
 

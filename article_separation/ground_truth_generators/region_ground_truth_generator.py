@@ -14,6 +14,7 @@ logger = logging.getLogger("TextBlockGroundTruthGenerator")
 logging.basicConfig(level=logging.WARNING)
 
 from tqdm import tqdm
+from python_util.basic.flags import str2bool
 
 
 class RegionGroundTruthGenerator(GroundTruthGenerator):
@@ -269,7 +270,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_height', type=int, default=0)
     parser.add_argument('--max_width', type=int, default=0)
     parser.add_argument('--scaling_factor', type=float, default=1.0)
-    parser.add_argument('--save_json', default=False, type=bool,
+    parser.add_argument('--save_json', nargs='?', const=True, default=True, type=str2bool,
                         help="If true, a json file for all images in the image list is created and saved into the"
                              "directory given by 'save_dir'. Also, symlinks to the original image files are created.")
 

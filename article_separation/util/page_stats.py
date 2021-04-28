@@ -1,7 +1,7 @@
 import argparse
-import os
 import logging
 
+from python_util.basic.flags import str2bool
 from python_util.parser.xml.page.page import Page
 import python_util.parser.xml.page.page_constants as page_constants
 
@@ -40,14 +40,18 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument('--pagexml_list', help="Input list with paths to pagexml files", required=True)
-    parser.add_argument('--region_stats', type=bool, default=True, metavar="BOOL",
+    parser.add_argument('--region_stats', nargs='?', const=True, default=True, type=str2bool,
                         help="Get region stats or not.")
-    parser.add_argument('--text_line_stats', type=bool, default=True, metavar="BOOL",
+    parser.add_argument('--text_line_stats', nargs='?', const=True, default=True, type=str2bool,
                         help="Get text_line stats or not.")
-    parser.add_argument('--article_stats', type=bool, default=True, metavar="BOOL",
+    parser.add_argument('--article_stats', nargs='?', const=True, default=True, type=str2bool,
                         help="Get article stats or not.")
+
     args = parser.parse_args()
 
     with open(args.pagexml_list, "r") as list_file:
         for path in list_file:
-            get_page_stats(path.rstrip())
+            get_page_stats(path.rstrip(),
+                           region_stats=args.region_stats,
+                           text_line_stats=args.text_line_stats,
+                           article_stats=args.article_stats)

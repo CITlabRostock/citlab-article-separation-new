@@ -16,6 +16,7 @@ from article_separation.gnn.input.textblock_similarity import TextblockSimilarit
 from python_util.image_processing.swt_dist_trafo import StrokeWidthDistanceTransform
 from python_util.parser.xml.page.page import Page
 from python_util.geometry.util import convex_hull, bounding_box
+from python_util.basic.flags import str2bool
 
 
 def get_text_region_geometric_features(text_region, norm_x, norm_y):
@@ -734,10 +735,6 @@ def generate_input_jsons_bc(page_paths, out_path,
 
 if __name__ == '__main__':
     logging.getLogger().setLevel("INFO")
-
-    # Register a custom function for 'bool' so --flag=True works.
-    def str2bool(v):
-        return v.lower() in ('true', 't', '1')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--pagexml_list', help="Input list with paths to pagexml files", required=True)

@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 
 import python_util.preprocessing.page_preprocessing as page_preprocessing
+from python_util.basic.flags import str2bool
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -9,9 +10,8 @@ if __name__ == '__main__':
                         help="path to the lst file containing the file paths of the PageXmls")
     parser.add_argument('--save_folder', default=None, type=str, metavar="STR",
                         help="save folder where files are stored. If not given, it saves the page files in place.")
-    parser.add_argument('--overwrite', default=False, type=bool,
-                        help="If true, it overwrites the page xml files modified by the preprocessor. "
-                             "Defaults to False.")
+    parser.add_argument('--overwrite', nargs='?', const=True, default=False, type=str2bool,
+                        help="If True, overwrites page xml files modified by the preprocessor (default: False).")
 
     flags = parser.parse_args()
     page_path_list = flags.page_path_list

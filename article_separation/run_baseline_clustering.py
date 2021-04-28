@@ -4,6 +4,8 @@ import subprocess
 from argparse import ArgumentParser
 from multiprocessing.pool import ThreadPool
 
+from python_util.basic.flags import str2bool
+
 
 def worker(sample, counter, flags, skipped_files):
     my_tool_subprocess = \
@@ -59,7 +61,7 @@ if __name__ == "__main__":
                         help="desired distance (measured in pixels) of two adjacent pixels in the normed polygons")
     parser.add_argument('--max_d', type=int, default=500,
                         help="maximum distance (measured in pixels) for the calculation of the interline distances")
-    parser.add_argument('--use_java_code', type=bool, default=True,
+    parser.add_argument('--use_java_code', nargs='?', const=True, default=True, type=str2bool,
                         help="usage of methods written in java (faster than python!) or not")
     parser.add_argument('--target_average_interline_distance', type=int, default=50,
                         help="target interline distance for scaling of the polygons")

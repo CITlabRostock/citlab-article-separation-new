@@ -46,7 +46,7 @@ def get_list_of_interline_distances(lst_of_polygons, des_dist=5, max_d=500, use_
 
     # call java code to calculate the interline distances
     if use_java_code:
-        java_object = jpype.JPackage("article_separation.java").Util()
+        java_object = jpype.JPackage("java_util").Util()
 
         lst_of_normed_polygon_java = []
 

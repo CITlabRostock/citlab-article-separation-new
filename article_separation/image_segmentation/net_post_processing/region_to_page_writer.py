@@ -11,6 +11,9 @@ logger = custom_logging.setup_custom_logger(__name__)
 
 
 class RegionToPageWriter(ABC):
+    """
+    Abstract class for loading page objects and saving region information to it.
+    """
     def __init__(self, path_to_page, path_to_image=None, fixed_height=None, scaling_factor=None, *args, **kwargs):
         self.scaling_factor = None
         if path_to_image is not None:
@@ -20,6 +23,13 @@ class RegionToPageWriter(ABC):
         self.page_object = self.load_page_object(path_to_page, path_to_image)
 
     def load_page_object(self, path_to_page, path_to_image):
+        """
+        Loads the PAGE-XML file given by ``path_to_page`` in a Page object. If such a file does not exist a Page object
+        is created from the corresponding image page ``path_to_image``.
+        :param path_to_page: Path to the PAGE-XML file.
+        :param path_to_image: Path to the corresponding image file.
+        :return: Page object of PAGE-XML file.
+        """
         # if PAGE file not existent, create one
         if not os.path.exists(path_to_page):
             image_width, image_height = get_image_dimensions(path_to_image)
@@ -28,11 +38,16 @@ class RegionToPageWriter(ABC):
         return Page(path_to_page)
 
     def save_page_xml(self, save_path):
+        """
+        Write the Page object to disk at ``save_path``.
+        :param save_path: Save path.
+        :return:
+        """
         self.page_object.write_page_xml(save_path)
 
     # def write_regions(self, create_backup=False):
     #     """
-    #     Update and write the new regions into the PAGE file. IF `create_backup` is True, a backup of the original PAGE
+    #     Update and write the new regions into the PAGE file. IF ``create_backup`` is True, a backup of the original PAGE
     #     file is created by appending the ".bak" extension.
     #     """
     #     for i in range(len(self.page_object_list)):

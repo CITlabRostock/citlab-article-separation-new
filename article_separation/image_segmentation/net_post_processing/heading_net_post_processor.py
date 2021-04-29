@@ -3,10 +3,10 @@ from collections import Counter
 
 import numpy as np
 
-from article_separation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
+from article_separation.image_segmentation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
     get_net_output
-from article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
-from article_separation.net_post_processing.region_to_page_writer import RegionToPageWriter
+from article_separation.image_segmentation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
+from article_separation.image_segmentation.net_post_processing.region_to_page_writer import RegionToPageWriter
 from python_util.image_processing.swt_dist_trafo import StrokeWidthDistanceTransform
 from python_util.io.file_loader import get_page_path
 from python_util.logging.custom_logging import setup_custom_logger
@@ -17,13 +17,25 @@ logger = setup_custom_logger("HeadingNetPostProcessor", "info")
 
 
 class HeadingNetPostProcessor(RegionNetPostProcessor):
+    """
+    Applies a post processing to the network output of an image segmentation algorithm that detects headings in an
+    image. Firstly, the post processor defines for each text line if it is a heading or not by giving each TextLine
+    object in the PAGE-XML file a custom tag like in the following example.
+
+            <TextLine id="tl1", custom={readingOrder {index:1;} structure {semantic_type:"heading";}>
+
+    In order to tell if a TextLine is a heading or not the net output is combined (in a weighted manner) with an
+    approximate text height and stroke width detection coming from a distance transformation algorithm. Finally, a
+    TextRegion is considered a heading if at least a specific amount of its text lines is defined as a heading.
+    """
     def __init__(self, image_list, path_to_pb, fixed_height, scaling_factor, weight_dict=None, threshold=0.5,
                  thresh_dict=None, text_line_percentage=None):
         """
-        :param image_list:
-        :param path_to_pb:
-        :param fixed_height:
-        :param scaling_factor:
+        :param image_list: List of images to apply the net post processing to.
+        :param path_to_pb: Path to the tensorflow pb-Graph to load the trained network.
+        :param fixed_height: Scale the images s.t. they have a fixed height by keeping the aspect ratio.
+        :param scaling_factor: Scale the images with a scaling factor (ignore if fixed_height is given) by keeping the
+        aspect ratio.
         :param weight_dict: contains the weights for the different header features, supports "net", "stroke_width" and "text_height"
         """
         super().__init__(image_list, path_to_pb, fixed_height, scaling_factor)
@@ -36,11 +48,37 @@ class HeadingNetPostProcessor(RegionNetPostProcessor):
         self.text_line_percentage = text_line_percentage if text_line_percentage is not None else 1.0
 
     def scale_to_new_interval(self, data, old_min, old_max, new_min=0, new_max=1):
+        """
+        Scales a given value ``data`` that is defined on a range `[old_min, old_max]` to a new range `[new_min, new_max]`.
+        E.g., if `data=5` in the interval `[0, 10]` this will result in `data=0.5` in the new interval `[0, 1]`.
+        :param data: The value that should be mapped to another range.
+        :param old_min: Old min value.
+        :param old_max: Old max value.
+        :param new_min: New min value.
+        :param new_max: New max value.
+        :return: Data value inside the new interval.
+        """
         if old_max - old_min == 0:
             return data
         return (new_max - new_min) / (old_max - old_min) * (data - old_min) + new_min
 
+    # TODO: Add overwrite flag instead of creating a new file by default.
     def to_page_xml(self, page_path, image_path=None, net_output_post=None, swt_feature_image=None, *args, **kwargs):
+        """
+        Given a PAGE-XML file with path ``page_path``, the (post processed) net output ``net_output_post`` and the distance
+        transformation feature image ``swt_feature_image``, this method determines which TextLines and TextRegions are
+        headings and saves the information in a page object which is then returned.
+        The final PAGE-XML file also gets saved to ``page_path`` appended with ".xml" so it doesn't get overwritten.
+        :param page_path: Path to the PAGE-XML file.
+        :param image_path: Path to the image file corresponding to the page file. Is determined from the page path if
+        not given.
+        :param net_output_post: The (post processed) net output to detect the heading regions inside the image.
+        :param swt_feature_image: The distance transformation image that has the same size as the original image and
+        holds information about the approximate stroke width and text height of the text.
+        :param args: More arguments.
+        :param kwargs: More keyword arguments.
+        :return: Page object with the heading information on TextLine and TextRegion basis.
+        """
         region_page_writer = RegionToPageWriter(page_path, path_to_image=image_path, fixed_height=self.fixed_height,
                                                 scaling_factor=self.scaling_factor)
         # image_width, image_height = get_image_dimensions(image_path)
@@ -163,9 +201,9 @@ class HeadingNetPostProcessor(RegionNetPostProcessor):
 
     def post_process(self, net_output):
         """
-        Take as input the neural net output and the SWT-features and combine them to get the header regions.
-        :param net_output:
-        :return:
+        Return the net output ``net_output`` without the "other" class and convert the output to the [0, 255] range.
+        :param net_output: The raw output of the image segmentation network applied to a specific image.
+        :return: The net output without the "other" class and with values in range [0, 255].
         """
         # Ignore the other class
         return net_output[:, :, 0] / 255
@@ -173,17 +211,18 @@ class HeadingNetPostProcessor(RegionNetPostProcessor):
     def get_swt_features_image(self, image_path):
         """
         Apply a stroke width transformation (SWT) to the input image and use the features to extract the header regions.
-        :return:
+        :return: An image with the same size as the input image that holds SWT features.
         """
         return self.SWT.distance_transform(image_path)
 
     def get_swt_features_textline(self, swt_feature_image, text_line: TextLine):
         """
-        For a given line object `text_line` return the corresponding stroke width of the text.
+        For a given TextLine object ``text_line`` return the corresponding (approx.) stroke width and text height
+        of the text.
 
-        :param swt_feature_image: SWT feature image generated by the function `get_swt_features`.
+        :param swt_feature_image: SWT feature image generated by the function ``get_swt_features``.
         :param text_line: TextLine object
-        :return:
+        :return: Tuple holding information of the approx. stroke width and text height of the text line.
         """
         bounding_box = text_line.surr_p.to_polygon().get_bounding_box()
         xa, xb = bounding_box.x, bounding_box.x + bounding_box.width
@@ -206,6 +245,16 @@ class HeadingNetPostProcessor(RegionNetPostProcessor):
         return text_line_stroke_width, text_line_height
 
     def get_net_prob_for_text_line(self, net_output, text_line, scaling_factor):
+        """
+        Given a TextLine object ``text_line`` return the average ``net_output`` confidence by cumulating the confidence
+        values of the net_output given inside the bounding box of the text line and dividing by the size of the bounding
+        box. If the net_output was rescaled by the factor ``scaling_factor`` before, apply it also to the text line
+        polygon.
+        :param net_output:
+        :param text_line:
+        :param scaling_factor:
+        :return:
+        """
         # since we use a scaling factor for the net_output, we need a rescaled bounding box
         if text_line.surr_p is None:
             return 0
@@ -221,6 +270,12 @@ class HeadingNetPostProcessor(RegionNetPostProcessor):
         return prob_sum / (bounding_box.width * bounding_box.height)
 
     def run(self, gpu_device='0'):
+        """
+        Run the heading detection on GPU or CPU. If there are e.g. 4 GPUs, choose between "0, 1, 2, 3". If you only want
+        to use CPU, run it with None or an empty string.
+        :param gpu_device: Which gpu device(s) to use.
+        :return:
+        """
         new_page_objects = []
         for image_path in self.image_paths:
             image, image_grey, sc = load_and_scale_image(image_path, self.fixed_height, self.scaling_factor)

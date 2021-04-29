@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+"""
+This file is used to plot the metadata information given by a PAGE-XML document together with the corresponding image.
+"""
+
 import collections
 import functools
 import os
@@ -190,6 +195,18 @@ def check_type(lst, t):
 
 
 def compare_article_ids(a, b):
+    """
+    Compares two article ids that are given as e.g. "a11" and "a2".
+    Returns
+
+    - 0 if ``a==b`` or both are ``None``,
+    - -1 if just ``b`` is ``None`` or the article number of ``b`` is bigger than the one of ``a`` and
+    - 1 if just ``a`` is ``None`` or the article number of ``a`` is bigger than the one of ``b``.
+
+    :param a: Article ID 1.
+    :param b: Article ID 2.
+    :return: 0, -1, 1 as defined above.
+    """
     if a is None and b is None:
         return 0
     elif a is None:
@@ -206,6 +223,24 @@ def compare_article_ids(a, b):
 
 def plot_ax(ax=None, img_path='', baselines_list=None, surr_polys=None, bcolors=None, region_dict_poly=None,
             rcolors=None, word_polys=None, plot_legend=False, fill_regions=False, height=None, width=None):
+    """
+    Plot the given polygons to the axes ``ax``. If ``ax`` is ``None`` create a new axes.
+
+    :param ax: Matplotlib axes.
+    :param img_path: Path to the image file.
+    :param baselines_list: List of baselines to plot.
+    :param surr_polys: List of text lines to plot (also called the surrounding polygons of the baseline).
+    :param bcolors: A list of colors to use for plotting the baselines based on the corresponding article id.
+    :param region_dict_poly: A region dictionary that has the region name as key and a list of polygons as items.
+    :param rcolors: A dictionary of colors to use for plotting the different regions based on their name, e.g.
+    paragraph text regions are always green).
+    :param word_polys: List of word polygons to plot.
+    :param plot_legend: If True a legend is plotted.
+    :param fill_regions: If True fill the regions, otherwise just plot the contours/outlines.
+    :param height: The height of the image.
+    :param width: The width of the image.
+    :return:
+    """
     if rcolors is None:
         rcolors = {}
     if region_dict_poly is None:
@@ -280,6 +315,20 @@ def plot_ax(ax=None, img_path='', baselines_list=None, surr_polys=None, bcolors=
 
 def plot_pagexml(page, path_to_img, ax=None, plot_article=True, plot_legend=False, fill_regions=False,
                  use_page_image_resolution=False):
+    """
+    Plot one PAGE-XML file given by ``page`` (can be a path to the PAGE-XML file or a Page object) together with the
+    corresponding image stored at path ``path_to_img``.
+
+    :param page: Page object or path to the PAGE-XML document.
+    :param path_to_img: Path to the corresponding image file.
+    :param ax: Matplotlib axes, if not provided create a new one.
+    :param plot_article: Plot the baselines in different colors depending on the article they belong to.
+    :param plot_legend: Plot the article id information of the baselines in a legend.
+    :param fill_regions: If True fill the regions, otherwise just draw the contours/outlines.
+    :param use_page_image_resolution: Use the image resolution given by the information stored in the PAGE-XML document
+    and scale the input image accordingly (if necessary).
+    :return:
+    """
     if type(page) == str:
         page = Page(page)
     assert type(page) == Page, f"Type must be Page, got {type(page)} instead."
@@ -357,6 +406,26 @@ def plot_pagexml(page, path_to_img, ax=None, plot_article=True, plot_legend=Fals
 
 def plot_list(img_lst, hyp_lst, gt_lst=None, plot_article=True, plot_legend=False, force_equal_names=True,
               fill_regions=False, use_page_image_resolution=False):
+    """
+    Given a path to a list file containing the paths to image files (``img_lst``), plot those images together with the
+    metadata given by their corresponding PAGE-XML document. The paths to the PAGE-XML documents are given by
+    ``hyp_lst``. The parameter ``force_equal_names`` (if True) ensures that the PAGE-XML file(s) and the image file have
+    the same name and are not plotted if the names don't match. If a ground truth list (``gt_lst``) is provided,
+    hypothesis and ground truth are plotted side by side.
+
+    :param img_lst: Path to the list file containing the paths to the image files to plot.
+    :param hyp_lst: Path to the list file containing the paths to the PAGE-XML documents holding the metadata
+    information to plot together with the image.
+    :param gt_lst: Path to an optional list file containing the paths to PAGE-XML documents that should also be
+    plotted together with the image next to the other data given by the other PAGE-XML list.
+    :param plot_article: Plot the baselines in different colors depending on the article they belong to.
+    :param plot_legend: Plot a legend giving information about the article ids for the baselines.
+    :param force_equal_names: Forces the documents in the different lists to have the same base-filename.
+    :param fill_regions: If True the regions are filled, otherwise only the contours are plotted.
+    :param use_page_image_resolution: Use the image resolution given by the PAGE-XML document and scale the input image
+    accordingly (if necessary).
+    :return:
+    """
     if not img_lst:
         print(f"No valid image list found: '{img_lst}'.")
         exit(1)
@@ -463,6 +532,16 @@ def plot_list(img_lst, hyp_lst, gt_lst=None, plot_article=True, plot_legend=Fals
 
 
 def plot_folder(path_to_folder, plot_article=True, plot_legend=False, fill_regions=False):
+    """
+    Given a folder where images and their corresponding PAGE-XML documents are stored (the PAGE-XML documents are stored
+    inside a "page" folder) this method is used to plot the images one by one with the metadata information given by the
+    corresponding PAGE-XML file.
+    :param path_to_folder: Path to the folder with the images which should be plotted.
+    :param plot_article: Plot the baselines in different colors based on the corresponding article id.
+    :param plot_legend: Plot a legend for the different baseline colors (telling which article id corresponds to them).
+    :param fill_regions: Fill the regions or just plot the outline/contour.
+    :return:
+    """
     file_paths = []
     try:
         for root, dirs, files in os.walk(path_to_folder):

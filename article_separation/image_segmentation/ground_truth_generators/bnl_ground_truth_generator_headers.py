@@ -1,10 +1,15 @@
 import argparse
 
-from article_separation.ground_truth_generators.region_ground_truth_generator import \
+from article_separation.image_segmentation.ground_truth_generators.region_ground_truth_generator import \
     RegionGroundTruthGenerator
 
 
 class BNLGroundTruthGeneratorHeaders(RegionGroundTruthGenerator):
+    """
+    This ground truth generator is used to create heading ground truth based on the data given by the BNL from the URL
+    https://data.bnl.lu/data/historical-newspapers/. Here, the issued "Luxemburger Wort" and
+    "L’indépendance Luxembourgeoise" are used.
+    """
     def __init__(self, path_to_img_lst, max_resolution=(0, 0), scaling_factor=1.0, use_bounding_box=False,
                  use_min_area_rect=False, issue_name="luxwort"):
         super().__init__(path_to_img_lst, max_resolution, scaling_factor, use_bounding_box, use_min_area_rect)

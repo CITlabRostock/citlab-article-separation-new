@@ -72,9 +72,9 @@ class TextBlockNetPostProcessor(object):
 
     @staticmethod
     def get_separators(image, mode='horizontal', threshold=0.1):
-        """ This function looks for separators in an image `image`. By default it looks for white runs in the image by
-        adding up the pixel values across the x or y dimension depending on the `mode` parameter and check if it exceeds
-         a given threshold given by the parameter `threshold`. If you're looking for black runs, just invert the image.
+        """ This function looks for separators in an image ``image``. By default it looks for white runs in the image by
+        adding up the pixel values across the x or y dimension depending on the ``mode`` parameter and check if it exceeds
+         a given threshold given by the parameter ``threshold``. If you're looking for black runs, just invert the image.
 
         :param image: input image
         :param mode: can be one of 'horizontal' (0) or 'vertical' (1)
@@ -123,11 +123,11 @@ class TextBlockNetPostProcessor(object):
 
     def run_recursion(self, region_rectangle: Rectangle, max_recursion_depth=MAX_RECURSION_DEPTH, mode="horizontal", threshold=0.9):
         """ Run recursion to determine the text regions. Make sure to alternate between horizontal and vertical
-        separator detection. The `mode` parameter determines with which subdivision to start, defaults to 'horizontal'.
+        separator detection. The ``mode`` parameter determines with which subdivision to start, defaults to 'horizontal'.
 
         :param region_rectangle: determines the region in the original text block image
         :param threshold: relative number of white pixels that should be reached to be defined as a white run.
-        :param mode: same parameter as in method `get_separators`, 'horizontal' or 'vertical'.
+        :param mode: same parameter as in method ``get_separators``, 'horizontal' or 'vertical'.
         :param max_recursion_depth: maximal number of times to run the recursion
         :return: a mask that can be applied to the baseline detection output to get a division into text regions
         """

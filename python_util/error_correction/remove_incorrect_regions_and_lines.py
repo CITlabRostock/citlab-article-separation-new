@@ -1,3 +1,9 @@
+"""
+In the course of the project, an error occurred when applying the separator detection, where TextLines where generated
+that had no parent TextRegion which led to duplicate TextLines in the baseline clustering and text region generation
+part. This error should be fixed here together with removing too small TextRegions.
+"""
+
 import logging
 from python_util.parser.xml.page.page import Page
 from article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
@@ -15,7 +21,15 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 
-def run(page_path_list, overwrite):
+def run(page_path_list, overwrite=True):
+    """
+    Run the error correction on all PAGE-XML files given in `page_path_list`. If overwrite is True, replace the original
+    PAGE-XML file.
+    :param page_path_list: List of PAGE-XML paths.
+    :param overwrite: Replace the original PAGE-XML file if True, otherwise create a new file with an additional ".xml"
+    appended.
+    :return:
+    """
     for page_path in tqdm(page_path_list):
         page = Page(page_path)
 

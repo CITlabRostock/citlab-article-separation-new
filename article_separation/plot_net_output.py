@@ -1,4 +1,6 @@
-from __future__ import print_function, division
+"""
+Utility to plot the net output of a TensorFlow graph applied to an image.
+"""
 
 import colorsys
 import os
@@ -12,6 +14,11 @@ import tensorflow as tf
 
 
 def load_graph(frozen_graph_filename):
+    """
+    Load the pb-TensorFlow graph.
+    :param frozen_graph_filename: Path to the pb-TensorFlow graph.
+    :return: The loaded TensorFlow graph.
+    """
     # We load the protobuf file from the disk and parse it to retrieve the unserialized graph_def
     with tf.gfile.GFile(frozen_graph_filename, "rb") as f:
         graph_def = tf.GraphDef()
@@ -36,6 +43,9 @@ def random_colors(N, bright=True):
     Generate random colors.
     To get visually distinct colors, generate them in HSV space then
     convert to RGB.
+    :param N: How many random distinct colors?
+    :param bright: If true the colors will have a brightness of 1.0, otherwise the brightness is 0.7.
+    :return: N randomly generated colors.
     """
     brightness = 1.0 if bright else 0.7
     hsv = [(i / N, 1, brightness) for i in range(N)]
@@ -45,7 +55,12 @@ def random_colors(N, bright=True):
 
 
 def apply_mask(image, mask, color, alpha=0.5):
-    """Apply the given mask to the image.
+    """
+    Apply the given mask to the image.
+    :param image: Input image the mask should be plotted on.
+    :param mask: Binary mask that should be plotted on the image.
+    :param color: Which color to use for the given mask.
+    :param alpha: Alpha value of the mask.
     """
     for c in range(3):
         image[:, :, c] = np.where(mask == 255,
@@ -55,6 +70,12 @@ def apply_mask(image, mask, color, alpha=0.5):
     return image
 
 def plot_image_with_net_output(image, net_output):
+    """
+    Plot the given ```image``` together with the ```net_output```.
+    :param image: Original input image.
+    :param net_output: Net output that should be plotted onto the image.
+    :return: Image + net output mask(s).
+    """
     colors = random_colors(10)
     print(colors)
     # print(net_output.shape)
@@ -73,6 +94,11 @@ def plot_image_with_net_output(image, net_output):
 
 
 def plot_connected_components(image):
+    """
+    Plot the connected components in an image.
+    :param image: Input image.
+    :return: Image with connected components of the original input image.
+    """
     _, image_bin = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     ret, labels, stats, centroids = cv2.connectedComponentsWithStats(255 - image_bin)
 
@@ -82,17 +108,18 @@ def plot_connected_components(image):
 
 def compute_accuracy(hyp_image, gt_image):
     """
-    Compare the hypothesis image `hyp_image` to the GT image `gt_image` and compute the accuracy.
+    Compare the hypothesis image ```hyp_image``` to the GT image ```gt_image``` and compute the accuracy.
     Assume that both images are binary.
-    :param hyp_image:
-    :param gt_image:
-    :return:
+    :param hyp_image: Hypothesis.
+    :param gt_image: Ground Truth.
+    :return: Accuracy, i.e., how much percent of all pixels are equal in both images.
     """
     return np.sum(hyp_image == gt_image) / gt_image.size
 
 
 def plot_confidence_histogram(bin_image):
-    """ Assumes that `bin_image` is a binary image with values ranging from 0 to 255.
+    """ Assumes that ```bin_image``` is a binary image with values ranging from 0 to 255. Plots a histogram showing all
+    confidences present in an image.
 
     :param bin_image:
     :return:
@@ -104,6 +131,26 @@ def plot_confidence_histogram(bin_image):
 def plot_net_output(path_to_pb, path_to_img_lst, save_folder="", gpu_device="0", rescale=None, fixed_height=None,
                     mask_threshold=None, plot_with_gt=False, plot_with_img=False, show_plot=False,
                     calculate_accuracy=True, figsize=(16, 16), ax=None):
+    """
+    Plot the output of a pb-TensorFlow graph applied to all images in ```path_to_img_lst``` and (optionally) save them in
+    the provided ```save_folder```.
+    :param path_to_pb: Path to the TensorFlow graph.
+    :param path_to_img_lst: Path to the image list the graph should be applied to.
+    :param save_folder: Path to the folder where the plots should be saved to (optional).
+    :param gpu_device: Name of the GPU device to use (e.g. "0" for the first GPU, empty string or None for CPU).
+    :param rescale: Scaling factor to use on the image.
+    :param fixed_height: Use a fixed input image height by keeping the aspect ratio.
+    :param mask_threshold: Apply a threshold to the masks to convert them to values 0 and 255.
+    :param plot_with_gt: Plot two images side by side comparing the net output with the ground truth (only works if
+    there is a GT folder).
+    :param plot_with_img: Plot the net output together with the original image instead of only the masks.
+    :param show_plot: Show the plot one image after the other.
+    :param calculate_accuracy: Calculate the accuracy of the net output by comparing the number of pixels that are equal
+    (only works if there is a GT folder).
+    :param figsize: Figure size (important for saving the image).
+    :param ax: Matplotlib axes, if given. Otherwise a new one is created.
+    :return:
+    """
     session_conf = tf.ConfigProto()
     session_conf.gpu_options.visible_device_list = gpu_device
 

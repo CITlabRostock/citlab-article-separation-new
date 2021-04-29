@@ -1,3 +1,7 @@
+"""
+This file contains all important names related to the PAGE-XML format.
+"""
+
 # Creators name
 sCREATOR = "CITlab"
 

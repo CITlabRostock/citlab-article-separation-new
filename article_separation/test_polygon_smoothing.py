@@ -4,7 +4,7 @@ import jpype
 
 from python_util.parser.xml.page.page import Page
 from python_util.basic.list_util import filter_by_attribute
-from article_separation.util import get_article_rectangles_from_surr_polygons, smooth_article_surrounding_polygons, \
+from article_separation.util.util import get_article_rectangles_from_surr_polygons, smooth_article_surrounding_polygons, \
     convert_blank_article_rects_by_rects, \
     convert_blank_article_rects_by_polys
 from python_util.geometry.rectangle import Rectangle

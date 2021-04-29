@@ -52,7 +52,7 @@ class BaselineMeasureEval(object):
             for poly in polys_reco:
                 polys_reco_java.append(jpype.java.awt.Polygon(poly.x_points, poly.y_points, poly.n_points))
 
-            java_object = jpype.JPackage("article_separation_measure.external.java").Util()
+            java_object = jpype.JPackage("java_util").Util()
 
             pr_list = \
                 java_object.calcMetricForPageBaseLinePolys(polys_truth_java, polys_reco_java,

@@ -8,15 +8,21 @@ import numpy as np
 from python_util.parser.xml.page import page_constants
 from python_util.io.path_util import prepend_folder_name
 
-from article_separation.ground_truth_generators.ground_truth_generator_base import GroundTruthGenerator
+from article_separation.image_segmentation.ground_truth_generators.ground_truth_generator_base import \
+    GroundTruthGenerator
+
+from tqdm import tqdm
+
+from typing import List, Tuple
 
 logger = logging.getLogger("TextBlockGroundTruthGenerator")
 logging.basicConfig(level=logging.WARNING)
 
-from tqdm import tqdm
-
 
 class RegionGroundTruthGenerator(GroundTruthGenerator):
+    """
+    A ground truth generator specific for regions that can be extracted from the metadata inside PAGE-XML files.
+    """
     def __init__(self, path_to_img_lst, max_resolution=(0, 0), scaling_factor=1.0, use_bounding_box=False,
                  use_min_area_rect=False):
         super().__init__(path_to_img_lst, max_resolution, scaling_factor)
@@ -31,10 +37,19 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
                                                                 region_types=[page_constants.TextRegionTypes.sHEADING])
         self.use_bounding_box = use_bounding_box
         self.use_min_area_rect = use_min_area_rect
+        # TODO: Make this a class variable?
         if args.save_json:
             self.image_list, self.img_res_lst = super().create_images(color_mode='RGB')
 
     def run_ground_truth_generation(self, save_dir, create_info_file=True):
+        """
+        Runs the ground truth generation as defined in ```create_ground_truth_json``` and otherwise as defined in the super
+        class. The files are saved to ```save_dir``` with an optional info file (only for the non-json case) based on the
+        ```create_info_file``` parameter.
+        :param save_dir: Path to the save folder.
+        :param create_info_file: Optionally create an info file.
+        :return:
+        """
         if args.save_json:
             self.scaling_factors = [1] * len(self.img_path_lst)
             if len(self.page_object_lst) < 1:
@@ -45,7 +60,8 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
 
     def create_ground_truth_json(self, save_folder, regions_list=None, enforce_unique_name=False):
         """
-        Creates a json file containing the region information for each image in the following format:
+        Creates a json file containing the region information (only text regions for now!) for each image in the
+        following format:
          { 'image_name1.jpg':
            { 'regions': {
                '0': {
@@ -67,6 +83,16 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
            },
            ... more images ...
          }
+
+         A json style format is needed for training the MASK-RCNN model as defined in
+         https://github.com/matterport/Mask_RCNN.
+        :param save_folder: Path to the save folder.
+        :type save_folder: str
+        :param regions_list: A list of regions for each image. If None, the list of regions is created.
+        :type regions_list: List[List[List[Tuple[int, int]]]]
+        :param enforce_unique_name: Enforce unique filenames by prepending the folder names of the original input
+        images, since the files are stored in a flat hierarchy.
+        :type enforce_unique_name: bool
         :return:
         """
         if regions_list is None:
@@ -109,7 +135,12 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
         with open(json_save_file_name, 'w') as json_file:
             json.dump(data, json_file)
 
+    # TODO: Make this parameterizable, by e.g. adding flags for each region type.
     def create_ground_truth_images(self):
+        """
+        Create the ground truth images based on what regions should be recognized later on.
+        :return:
+        """
         # Textblocks outlines, Textblocks filled, (Images), Separators, Other
         for i in range(len(self.img_path_lst)):
             # Textblock outline GT image
@@ -137,7 +168,15 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
             self.valid_img_indizes.append(i)
         self.make_disjoint_all()
 
-    def get_min_area_rect(self, points):
+    # TODO: Move this to python_util?
+    @staticmethod
+    def get_min_area_rect(points):
+        """
+        Returns the minimal enclosing aligned rectangle of a set of points given by ```points```.
+        :param points: List of (x,y) coordinates.
+        :type points: List[Tuple[int, int]]
+        :return: Minimal enclosing aligned rectangle of a set of points.
+        """
         points_np = np.array(points)
         min_area_rect = cv2.minAreaRect(points_np)
         min_area_rect = cv2.boxPoints(min_area_rect)
@@ -149,6 +188,21 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
         return min_area_rect
 
     def create_region_gt_img(self, regions, img_width: int, img_height: int, fill: bool, scaling_factor: float = None):
+        """
+        Creates the region ground truth images for all regions in ```regions``` according to the function
+        ```plot_polys_binary```. If ```scaling_factor``` is not ```None``` the polygons get scaled according to this value.
+        :param regions: List of regions.
+        :type regions: List[List[Tuple[int, int]]]
+        :param img_width: Width of the final ground truth image.
+        :type img_width: int
+        :param img_height: Height of the final ground truth image.
+        :type img_width: int
+        :param fill: Determines if the regions should be filled or not.
+        :type fill: bool
+        :param scaling_factor: Scaling factor for the polygons.
+        :type scaling_factor: float
+        :return: One region ground truth image for each entry in the regions list.
+        """
         if self.use_bounding_box:
             regions_polygons = [region.points.to_polygon().get_bounding_box().get_vertices() for region in regions]
         elif self.use_min_area_rect:
@@ -163,11 +217,15 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
 
     def get_valid_text_regions(self, intersection_thresh=20, region_types=None):
         """
-        Get valid TextRegions from the PAGE file, where we check for intersections with images.
-        If `intersection_thresh` is negative, ignore the intersection and return all text_regions of type
-        `region_type`.
-        :param intersection_thresh:
-        :param region_types:
+        Get valid TextRegions (according to ```region_types```) from the PAGE file, where we check for intersections with images.
+        If ```intersection_thresh``` is non-negative, allow intersections of text regions with images of up to this value,
+        otherwise reject it. The intersection is the number of pixels the bounding boxes of the region and an image have
+        in common. If ```intersection_thresh``` is negative, ignore the intersection and return all text regions
+        of the types given in ```region_types```.
+        :param intersection_thresh: An integer value that controls if a text region is rejected or not, depending on the
+        intersection of the text region with an image region.
+        :type intersection_thresh: int
+        :param region_types: Valid region types for the final text regions, e.g. "TextRegion".
         :return:
         """
         if region_types is None:
@@ -203,18 +261,40 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
         return valid_text_regions_list
 
     def get_table_regions_list(self):
+        """
+        Returns all table regions from the created regions list.
+        :return: List of table regions
+        """
         return self.get_regions_list([page_constants.sTABLEREGION])
 
     def get_advert_regions_list(self):
+        """
+        Returns all advertisement regions from the created regions list.
+        :return: List of advertisement regions.
+        """
         return self.get_regions_list([page_constants.sADVERTREGION])
 
     def get_image_regions_list(self):
+        """
+        Returns all image regions from the created regions list.
+        :return: List of image regions.
+        """
         return self.get_regions_list([page_constants.sGRAPHICREGION, page_constants.sIMAGEREGION])
 
     def get_separator_regions_list(self):
+        """
+        Returns all separator regions from the created regions list.
+        :return: List of separator regions.
+        """
         return self.get_regions_list([page_constants.sSEPARATORREGION])
 
     def get_regions_list(self, region_types):
+        """
+        Returns all regions from the created regions list according to the region types given by ```region_types```.
+        :param region_types: List of region types that should be returned.
+        :type region_types: List[str]
+        :return: All regions from the created regions list according to the given region types.
+        """
         region_list_by_type = []
         for i, page_regions in enumerate(self.regions_list):
             regions = []
@@ -228,21 +308,43 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
         return region_list_by_type
 
     def get_title_regions_list(self, title_region_types):
-        """ Valid title_region_types are ["headline", "subheadline", "publishing_stmt", "motto", "other" ]
+        """
+        Returns all title regions from the created regions list.
+
+        Valid title_region_types are ["headline", "subheadline", "publishing_stmt", "motto", "other" ]
+        :param title_region_types: List of title region types that should be extracted.
+        :type title_region_types: List[str]
+        :return: List of title regions.
         """
 
         return self.get_heading_regions_list('title', title_region_types)
 
     def get_classic_heading_regions_list(self, heading_region_types):
-        """ Valid class_heading_region_types are ["overline", "", "subheadline", "author", "other"]
+        """
+        Returns all "classic" heading regions from the created regions list.
+
+        Valid "classic" heading region types are ["overline", "", "subheadline", "author", "other"]
         where "" represents the title (can also be "title").
+        :param heading_region_types: List of heading regions types that should be extracted.
+        :return: List of heading regions.
         """
         return self.get_heading_regions_list('heading', heading_region_types)
 
     def get_caption_text_regions(self):
+        """
+        Returns all caption regions from the created regions list.
+        :return: List of caption regions.
+        """
         return self.get_valid_text_regions(region_types=[page_constants.TextRegionTypes.sCAPTION])
 
     def get_heading_regions_list(self, custom_structure_type, custom_structure_subtypes):
+        """
+        Return all heading regions from the created regions list according to the types defined in the custom tag of a
+        TextRegion.
+        :param custom_structure_type: The value of the structure_type entry of the custom tag, e.g. "heading".
+        :param custom_structure_subtypes: The value of the structure_subtype entry of the custom tag, e.g. "headline".
+        :return: List of heading regions with a specific structure type and subtype.
+        """
         valid_text_regions = self.get_valid_text_regions(region_types=[page_constants.TextRegionTypes.sHEADING])
 
         region_list_by_type = []
@@ -253,9 +355,11 @@ class RegionGroundTruthGenerator(GroundTruthGenerator):
             for page_text_region in page_text_regions:
                 custom_dict_struct = page_text_region.custom['structure']
                 for custom_struct_subtype in custom_structure_subtypes:
-                    if custom_struct_subtype == '' and custom_dict_struct['type'] == custom_structure_type and 'subtype' not in custom_dict_struct.keys():
+                    if custom_struct_subtype == '' and custom_dict_struct[
+                        'type'] == custom_structure_type and 'subtype' not in custom_dict_struct.keys():
                         regions.append(page_text_region)
-                    elif custom_dict_struct['type'] == custom_structure_type and custom_dict_struct['subtype'] == custom_struct_subtype:
+                    elif custom_dict_struct['type'] == custom_structure_type and custom_dict_struct[
+                        'subtype'] == custom_struct_subtype:
                         regions.append(page_text_region)
             region_list_by_type.append(regions)
 

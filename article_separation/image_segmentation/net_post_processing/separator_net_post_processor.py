@@ -3,14 +3,12 @@ import argparse
 import numpy as np
 import cv2
 from python_util.io.file_loader import get_page_path
-from scipy.ndimage.interpolation import rotate
-from PIL import Image
 
-from article_separation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
+from article_separation.image_segmentation.net_post_processing.net_post_processing_helper import load_and_scale_image, \
     get_net_output, apply_threshold
 
-from article_separation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
-from article_separation.net_post_processing.separator_region_to_page_writer import SeparatorRegionToPageWriter
+from article_separation.image_segmentation.net_post_processing.region_net_post_processor_base import RegionNetPostProcessor
+from article_separation.image_segmentation.net_post_processing.separator_region_to_page_writer import SeparatorRegionToPageWriter
 from python_util.logging import custom_logging
 from python_util.parser.xml.page.page_constants import sSEPARATORREGION
 
@@ -18,13 +16,16 @@ logger = custom_logging.setup_custom_logger("SeparatorNetPostProcessor", level="
 
 
 class SeparatorNetPostProcessor(RegionNetPostProcessor):
-
+    """
+    A RegionNetPostProcessor specifically for processing the output of an image segmentation neural network specialized
+    on detecting visible horizontal and vertical separators in an image.
+    """
     def __init__(self, image_list, path_to_pb, fixed_height, scaling_factor, threshold, gpu_devices):
         super().__init__(image_list, path_to_pb, fixed_height, scaling_factor, threshold, gpu_devices)
 
     def post_process(self, net_output):
         """
-        Post process the raw net output `net_output`, e.g. by removing CCs that have a size smaller than 100 pixels.
+        Post process the raw net output ``net_output``, e.g. by removing CCs that have a size smaller than 100 pixels.
         :param net_output: numpy array with dimension HWC (only channel 1 - the separator channel - is important)
         :return: post processed net output of the same dimension as the input (HWC)
         """
@@ -97,10 +98,10 @@ class SeparatorNetPostProcessor(RegionNetPostProcessor):
 
     def to_polygons(self, net_output, separator_type=None):
         """
-        Converts the (post-processed) net output `net_output` to a list of polygons via contour detection and removal of
+        Converts the (post-processed) net output ``net_output`` to a list of polygons via contour detection and removal of
         unnecessary points.
         :param net_output: numpy array with dimension HWC
-        :return: list of polygons representing the contours of the CCs is appended to the `net_output_polygons`
+        :return: list of polygons representing the contours of the CCs is appended to the ``net_output_polygons``
         attribute
         """
         # for net_output in self.net_outputs_post:
@@ -115,8 +116,8 @@ class SeparatorNetPostProcessor(RegionNetPostProcessor):
 
     def to_page_xml(self, page_path, image_path=None, polygons_dict=None, *args, **kwargs):
         """
-        Write the polygon information given by `polygons_dict` coming from the `to_polygons` function to the page file
-        in `page_path`.
+        Write the polygon information given by ``polygons_dict`` coming from the ``to_polygons`` function to the page file
+        in ``page_path``.
         :param **kwargs:
         :param page_path: path to the page file the region information should be written to
         :param polygons_dict: dictionary with region types as keys and the corresponding list of polygons as values
@@ -133,6 +134,10 @@ class SeparatorNetPostProcessor(RegionNetPostProcessor):
         return region_page_writer.page_object
 
     def run(self):
+        """
+        Run the separator detection for all images and write the results into a PAGE-XML file.
+        :return:
+        """
         for image_path in self.image_paths:
             image, image_grey, sc = load_and_scale_image(image_path, self.fixed_height, self.scaling_factor)
             self.images.append(image)

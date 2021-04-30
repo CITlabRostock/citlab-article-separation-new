@@ -7,7 +7,7 @@
 > - utility functions, e.g. for plotting images together with metadata information (`python_util`)
 
 <!-- TOC -->
-##Table of Contents
+## Table of Contents
 * [Introduction](#introduction)
 * [Installation](#installation)
 * [Main Packages](#main-packages)

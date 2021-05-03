@@ -726,7 +726,8 @@ def generate_input_jsons_bc(page_paths, out_path,
                 logging.info(f"Saved json with graph features '{out}'")
         else:
             skipped_pages.append(page_path)
-    logging.info("Time (feature generation): {:.2f} seconds".format(time.time() - start_timer))
+    logging.info("Time (feature generation): {:.2f} seconds for {} files ({} sec/page)".format(
+        time.time() - start_timer, len(page_paths), (time.time() - start_timer) / len(page_paths)))
     logging.info(f"Wrote {len(page_paths)-len(skipped_pages)}/{len(page_paths)} files.")
     logging.info("Skipped files:")
     for skipped in skipped_pages:

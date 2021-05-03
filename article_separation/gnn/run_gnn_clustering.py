@@ -391,7 +391,8 @@ class EvaluateRelation(object):
             # print(" | " + "-" * 45)
             # print(f" |{thresholds[i_f]:10f}{prec[i_f]:12f}{rec[i_f]:12f}{f_score[i_f]:12f}")
 
-            logging.info("Time: {:.2f} seconds".format(time.time() - start_timer))
+            logging.info("Time: {:.2f} seconds for {} files ({} sec/page)".format(
+                time.time() - start_timer, batch_counter, (time.time() - start_timer) / batch_counter))
         logging.info("Evaluation finished.")
 
 

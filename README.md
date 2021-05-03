@@ -119,7 +119,7 @@ integrate visual features.
 ```bash
 --visual_regions True
 ```
-Similarly, text block similarity features based on word vector can be integrated, if they are available.
+Similarly, text block similarity features based on word vectors can be integrated, if they are available.
 ```bash
 --language "language" --wv_path "path/to/wordvector/file"
 ```
@@ -143,11 +143,12 @@ python -u run_gnn_clustering.py \
 ```
 
 For this module a trained GNN model is needed and the number of node and edge features needs to be set according to 
-the GNN, to correctly build in the input pipeline. For clustering algorithms, we currently support a greedy approach 
+the GNN, to correctly build the input pipeline. For clustering algorithms, we currently support a greedy approach 
 (greedy), a modified DBSCAN algorithm (dbscan) and a hierarchical clustering method (linkage).
 
 If visual regions were generated in the previous step and the GNN was trained accordingly, i.e. a visual feature 
-extractor component was added to the network, additional visual features can be integrated during this process.
+extractor component was added to the network, additional visual features can be integrated during this process. Note 
+that in this case the corresponding image files will be needed.
 ```bash
 --image_input True --assign_visual_features_to_nodes True --assign_visual_features_to_edges False
 ```

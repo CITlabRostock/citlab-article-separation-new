@@ -1,8 +1,8 @@
 import argparse
 from concurrent.futures import ProcessPoolExecutor
 
-from article_separation.net_post_processing.separator_net_post_processor import SeparatorNetPostProcessor
-from article_separation.net_post_processing.heading_net_post_processor import HeadingNetPostProcessor
+from article_separation.image_segmentation.net_post_processing.separator_net_post_processor import SeparatorNetPostProcessor
+from article_separation.image_segmentation.net_post_processing.heading_net_post_processor import HeadingNetPostProcessor
 from python_util.io.file_loader import load_list_file
 
 

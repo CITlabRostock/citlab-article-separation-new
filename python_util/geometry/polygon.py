@@ -246,7 +246,7 @@ def norm_poly_dists(poly_list, des_dist):
     adjacent pixels with a distance of ~des_dist.
 
     :param poly_list: list of polygons
-    :param des_dist: distance (measured in pixels) of two adjecent pixels in the destination polygon
+    :param des_dist: distance (measured in pixels) of two adjacent pixels in the destination polygon
     :type poly_list: list of Polygon
     :type des_dist: int
     :return: list of polygons

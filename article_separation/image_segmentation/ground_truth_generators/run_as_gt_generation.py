@@ -1,3 +1,7 @@
+"""
+In the current version, this file is not used.
+"""
+
 import os
 from argparse import ArgumentParser, ArgumentTypeError
 
@@ -13,7 +17,7 @@ from python_util.parser.xml.page.page import Page
 from python_util.plot import colors
 from matplotlib.collections import PolyCollection
 
-from article_separation.util import get_article_rectangles_from_baselines, merge_article_rectangles_vertically
+from article_separation.util.util import get_article_rectangles_from_baselines, merge_article_rectangles_vertically
 
 
 def plot_gt_data(img_path, surr_polys_dict, show=True):
@@ -46,8 +50,8 @@ def plot_gt_data(img_path, surr_polys_dict, show=True):
 
 
 def plot_polys_binary(polygon_list, img=None, img_width=None, img_height=None, closed=True, fill_articles=False):
-    """Adds a list of polygons `polygon_list` to a pillow image `img`. If `img` is None a new pillow image is generated
-    with a width of `img_width` and a height of `img_height`.
+    """Adds a list of polygons ``polygon_list`` to a pillow image ``img``. If ``img`` is None a new pillow image is generated
+    with a width of ``img_width`` and a height of ``img_height``.
 
     :param polygon_list: a list of polygons, each given by a list of (x,y) tuples
     :type polygon_list: list of (list of (int, int))

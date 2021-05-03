@@ -1,21 +1,42 @@
+"""
+This file is used for evaluating a specific hyperparameter setting for the heading detection performed by the
+``HeadingNetPostProcessor``.
+"""
 import argparse
 import os
 
 import numpy as np
 from sklearn.metrics import f1_score, recall_score, precision_score
 
-from article_separation.net_post_processing.heading_net_post_processor import HeadingNetPostProcessor
+from article_separation.image_segmentation.net_post_processing.heading_net_post_processor import HeadingNetPostProcessor
 from python_util.io.file_loader import load_list_file, get_page_path
 from python_util.parser.xml.page.page import Page
 from python_util.parser.xml.page.page_constants import TextRegionTypes
+from python_util.parser.xml.page.page_objects import TextRegion
+
+from typing import List
 
 
-def get_heading_regions(page_object: Page):
+def get_heading_regions(page_object):
+    """
+    Return all heading regions of a PAGE-XML file given by ``page_object`` as a list of TextRegion objects that have the
+    heading type.
+    :param page_object: PAGE-XML object from which the headings should be extracted.
+    :type page_object: Page
+    :return: List of TextRegion objects of the heading type.
+    """
     text_regions = page_object.get_text_regions()
     return [text_region for text_region in text_regions if text_region.region_type == TextRegionTypes.sHEADING]
 
 
 def get_heading_text_lines(heading_regions):
+    """
+    Given a list of TextRegion objects ``heading_regions`` (of type heading) return all of their text lines as one big
+    list.
+    :param heading_regions: List of TextRegion objects of type heading.
+    :type heading_regions: List[TextRegion]
+    :return: List of all TextLine objects belonging to the heading regions.
+    """
     text_lines = []
     for heading_region in heading_regions:
         text_lines.extend(heading_region.text_lines)
@@ -23,6 +44,15 @@ def get_heading_text_lines(heading_regions):
 
 
 def get_heading_text_line_by_custom_type(heading_regions):
+    """
+    Given a list of TextRegion objects ``heading_regions`` (of type heading) return all of their text lines that also
+    have the semantic type "heading". Note that not all text lines of a heading region need to be heading text lines.
+    See also the ``HeadingNetPostProcessor`` for more information.
+    :param heading_regions: List of TextRegion objects of type heading.
+    :type heading_regions: List[TextRegion]
+    :return: List of all TextLine objects belonging to the heading regions that have the additional "heading" structure
+    tag.
+    """
     text_lines = []
     for heading_region in heading_regions:
         from python_util.parser.xml.page.page_objects import TextLine

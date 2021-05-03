@@ -178,7 +178,7 @@ class ArticleRectangle(Rectangle):
         list_of_normed_polygons = norm_poly_dists([tl[2] for tl in tl_list], des_dist=des_dist)
 
         # call java code to calculate the interline distances
-        java_util = jpype.JPackage("article_separation.java").Util()
+        java_util = jpype.JPackage("java_util").Util()
 
         list_of_normed_polygon_java = []
 

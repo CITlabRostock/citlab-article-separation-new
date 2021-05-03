@@ -61,6 +61,12 @@ class PagePreProcessor:
                 f" assigned text lines in page file '{self.page_path_list[self.current_batch_idx][i]}'")
 
     def delete_border_textlines(self):
+        """
+        A method to delete text lines that are at the borders of the image and are "too short", meaning they probably
+        belong to another page.
+
+        :return:
+        """
         print(
             f"Start deleting text lines not belonging to the main page (i.e., covering the margin of neighboring pages"
             f" due to bad scans) for batch {self.current_batch_idx}..")

@@ -3,20 +3,35 @@ from copy import deepcopy
 import numpy as np
 from shapely import geometry, validation
 
-from article_separation.net_post_processing.region_to_page_writer import RegionToPageWriter
+from article_separation.image_segmentation.net_post_processing.region_to_page_writer import RegionToPageWriter
 from python_util.parser.xml.page.page_constants import sSEPARATORREGION, sTEXTREGION
 from python_util.parser.xml.page.page_objects import SeparatorRegion
 
 
 class SeparatorRegionToPageWriter(RegionToPageWriter):
+    """
+    A RegionToPageWriter specifically for the separator detection task. Has some additional methods to handle the
+    detected separator regions.
+    """
     def __init__(self, path_to_page, path_to_image=None, fixed_height=None, scaling_factor=None, region_dict=None):
         super().__init__(path_to_page, path_to_image, fixed_height, scaling_factor)
         self.region_dict = region_dict
 
     def remove_separator_regions_from_page(self):
+        """
+        Removes all current separator regions from the Page object.
+        :return:
+        """
         self.page_object.remove_regions(sSEPARATORREGION)
 
     def convert_polygon_with_holes(self, polygon_sh):
+        """
+        Given is a shapely polygon ``polygon_sh`` which can have holes, meaning that it is defined by more than one
+        polygon (e.g. an annulus is the region between two concentric circles, looking like a ring). This polygon should
+        then be converted to one or more polygons without holes by splitting the polygon at some point(s).
+        :param polygon_sh: Shapely polygon.
+        :return:
+        """
         def split_horiz_by_point(polygon, point):
             """"""
             assert polygon.geom_type == "Polygon" and point.geom_type == "Point"
@@ -49,6 +64,11 @@ class SeparatorRegionToPageWriter(RegionToPageWriter):
         return parts
 
     def convert_polygon_with_holes2(self, polygon_sh):
+        """
+        Compare to ``convert_polygon_with_holes``, but less efficient.
+        :param polygon_sh:
+        :return:
+        """
         def closest_pt(pt, ptset):
             """"""
             dist2 = np.sum((ptset - pt) ** 2, 1)
@@ -85,6 +105,13 @@ class SeparatorRegionToPageWriter(RegionToPageWriter):
         return poly
 
     def merge_regions(self, remove_holes=True):
+        """
+        For every (vertical) separator iterate over all text lines and split them if the separator goes through them or
+        cut them off depending on where the separator goes through the text lines. Finally, write the separator regions
+        to the Page object.
+        :param remove_holes: If True, remove holes of polygons.
+        :return:
+        """
         def _split_shapely_polygon(region_to_split_sh, region_compare_sh):
             # region_to_split_sh = region_to_split_sh.buffer(0)
             # region_compare_sh = region_compare_sh.buffer(0)
@@ -126,8 +153,8 @@ class SeparatorRegionToPageWriter(RegionToPageWriter):
 
         def _split_text_lines(text_lines_dict, sep_poly):
             """
-            Given a separator polygon `sep_poly` split just the text lines (and its baselines) given by
-            `text_line_list`. `sep_poly` is a list of lists of polygon coordinates. If the separator polygon is only
+            Given a separator polygon ``sep_poly`` split just the text lines (and its baselines) given by
+            ``text_line_list``. ``sep_poly`` is a list of lists of polygon coordinates. If the separator polygon is only
             described via one exterior polygon, the list of lists has length 1. Otherwise, there are also inner
             polygons, i.e. the list of lists has a length > 1.
             :param text_line_list:
@@ -196,7 +223,7 @@ class SeparatorRegionToPageWriter(RegionToPageWriter):
         def _split_regions(region_dict, sep_poly):
             """
             Given a SeparatorRegion, split regions in region_dict if possible/necessary. Returns False if one of the
-            regions in `region_dict` contains the SeparatorRegion. Then don't write it to the PAGE file.
+            regions in ``region_dict`` contains the SeparatorRegion. Then don't write it to the PAGE file.
             This function assumes, that the text lines lie completely within the text regions and the baselines lie
             completely within the text lines.
             :param region_dict:

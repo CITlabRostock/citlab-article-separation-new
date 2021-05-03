@@ -1,4 +1,8 @@
-import time
+"""
+This file is used for evaluating different hyperparameter settings for the heading detection performed by the
+```HeadingNetPostProcessor```. One specific hyperparameter setting is run with the ```heading_evaluation``` method.
+"""
+
 import concurrent.futures
 import os
 import argparse
@@ -6,6 +10,31 @@ import argparse
 
 def run_grid_search(fixed_height, threshold, net_weight, net_thresh, stroke_width_thresh, text_height_thresh,
                     text_line_percentage):
+    """
+    Run a grid search on different hyperparameters to find the best setting for detecting headings on a page.
+    :param fixed_height: All images should be scaled to have this fixed height.
+    :type fixed_height: int
+    :param threshold: A value in [0, 1] that should be reached by the heading detection confidence value for a specific
+    text line to define it as a heading text line.
+    :type threshold: float
+    :param net_weight: A value in [0, 10] that weights the confidence value of the neural network output. Gets
+    downscaled to [0, 1] later on.
+    :type net_weight: int
+    :param net_thresh: If the net confidence is greater than or equal to this value the text line is considered a
+    heading. Gets downscaled to [0, 1] later on.
+    :type net_thresh: int
+    :param stroke_width_thresh: If the confidence of the stroke width feature coming from the distance transformation
+    is greater than or equal to this value the text line is considered a heading. Gets downscaled to [0, 1] later on.
+    :type stroke_width_thresh: int
+    :param text_height_thresh: If the confidence of the text height feature coming from the distance transformation
+    is greater than or equal to this value the text line is considered a heading. Gets downscaled to [0, 1] later on.
+    :type text_height_thresh: int
+    :param text_line_percentage: For a TextRegion to be defined as a heading region at least this percentage of text
+    lines should be recognized as headings by the algorithm. Defined as a value in [0, 10]. Gets downscaled to [0, 1]
+    later on.
+    :type text_line_percentage: int
+    :return:
+    """
     net_weight_f = net_weight / 10
     net_thresh_f = net_thresh / 10
     stroke_width_thresh_f = stroke_width_thresh / 10
@@ -21,7 +50,7 @@ def run_grid_search(fixed_height, threshold, net_weight, net_thresh, stroke_widt
             text_height_weight_f = (10 - net_weight - stroke_width_weight) / 10
 
             os.system("python -u "
-                      "./citlab-article-separation/citlab_article_separation/net_post_processing/heading_evaluation.py "
+                      "./citlab-article-separation/article_separation/image_segmentation/net_post_processing/heading_evaluation.py "
                       "--path_to_gt_list {} "
                       "--path_to_pb {} "
                       "--fixed_height {} "

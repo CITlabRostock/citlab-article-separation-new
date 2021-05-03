@@ -7,15 +7,18 @@ import rasterio.features
 from PIL import Image
 from matplotlib.collections import PolyCollection
 
-from article_separation.net_post_processing.net_post_processing_helper import load_image_paths, \
+from article_separation.image_segmentation.net_post_processing.net_post_processing_helper import load_image_paths, \
     load_and_scale_image, load_graph, get_net_output, apply_threshold
 from python_util.geometry.point import rescale_points
 from python_util.geometry.util import alpha_shape
 from python_util.io.file_loader import get_page_path
-from python_util.parser.xml.page.plot import plot_pagexml
 
 
 class RegionNetPostProcessor(ABC):
+    """
+    This is the abstract base class for different kind of region net post processors, e.g. for heading detection or
+    separator detection.
+    """
     def __init__(self, image_list, path_to_pb, fixed_height, scaling_factor, threshold=None, gpu_devices='0'):
         if type(image_list) == str:
             self.image_paths = load_image_paths(image_list)
@@ -36,6 +39,10 @@ class RegionNetPostProcessor(ABC):
         # self.net_output_polygons = []
 
     def run(self):
+        """
+        Runs the net post processing on the given list of images.
+        :return:
+        """
         for image_path in self.image_paths:
             image, image_grey, sc = load_and_scale_image(image_path, self.fixed_height, self.scaling_factor)
             self.images.append(image)
@@ -76,12 +83,18 @@ class RegionNetPostProcessor(ABC):
 
     def to_polygons(self, binary_image):
         """
-        Converts a binary image (the net output) to polygons that can later be saved to the PAGE files.
+        Converts a binary image (the net output) to polygons that can later be saved to the PAGE-XML files.
         :return: dictionary of list of polygons, e.g. "{TextRegion: list of polygons}"
         """
         pass
 
     def plot_polygons(self, image, polygons):
+        """
+        Plot a given image ``image`` with the polygons defined by ``polygons``.
+        :param image: Image where the polygons should be plotted on.
+        :param polygons: List of polygons to plot on the image.
+        :return:
+        """
         fig = plt.figure()
         ax = fig.add_subplot()
         ax.imshow(image)
@@ -92,6 +105,12 @@ class RegionNetPostProcessor(ABC):
         plt.show()
 
     def plot_binary(self, image, net_output):
+        """
+        Plot the net output with values between 0 and 255 onto the image.
+        :param image: Image where the net output should be plotted on.
+        :param net_output: Binary net output image to plot on the image.
+        :return:
+        """
         image_pil = Image.fromarray(image).convert('RGBA')
         cm = plt.get_cmap('Reds')
         net_output_threshold = Image.fromarray(apply_threshold(net_output, 0.4)).convert('L')
@@ -111,9 +130,28 @@ class RegionNetPostProcessor(ABC):
 
     @abstractmethod
     def to_page_xml(self, page_path, image_path=None, *args, **kwargs):
+        """
+        Write the final polygons to the PAGE-XML file given by ``page_path``. Should be implemented by each subclass by
+        its own.
+        :param page_path: Path to the PAGE-XML file.
+        :param image_path: Path to the image file that is associated with the PAGE-XML file. If None, the image path is
+        defined by the path to to the PAGE-XML file.
+        :param args: Additional arguments.
+        :param kwargs: Additional keyword arguments.
+        :return:
+        """
         pass
 
     def remove_every_nth_point(self, polygon, n=2, min_num_points=20, iterations=1):
+        """
+        Given a polygon, this function removes every n-th point to make it simpler. Use with caution: This could lead to
+        unwanted effects, leading to a polygon that looks very different compared to the original one.
+        :param polygon: Polygon that should be simplified.
+        :param n: Remove every n-th point.
+        :param min_num_points: Minimal number of points that should be in the final polygon.
+        :param iterations: How many iterations to perform.
+        :return: Simplified polygon with less points.
+        """
         if iterations <= 0:
             return polygon
         if len(polygon) // n < min_num_points:
@@ -125,6 +163,13 @@ class RegionNetPostProcessor(ABC):
         return self.remove_every_nth_point(res, n, min_num_points, iterations - 1)
 
     def apply_contour_detection(self, image, use_alpha_shape=False):
+        """
+        Given a binary (binary) image ``image`` the contours of its connected components will be extracted as polygons
+        using the rasterio library with the rasterio.features.shapes function.
+        :param image: Input image.
+        :param use_alpha_shape: If True additionally apply the alpha shape algorithm to the resulting contour polygons.
+        :return: A list of polygons representing the contours of the connected components of an image.
+        """
         binary_image = image
 
         # _, binary_image = cv2.threshold(image, threshold, 255, cv2.THRESH_BINARY_INV)
@@ -137,11 +182,13 @@ class RegionNetPostProcessor(ABC):
 
         return contours
 
+    # TODO: apply_contour_detection() and this function nearly do the same, remove one of them.
     def apply_contour_detection2(self, binary_image):
         """
-        Given a binary image `binary_image` the contours are calculated. This can result in Polygons with outer AND
+        Given a binary image ``binary_image`` the contours are calculated. This can result in Polygons with outer AND
         inner points
-        :param binary_image:
+        :param binary_image: The binary image from which the contours of the connected components should be extracted
+        from.
         :return:
         """
         contours = rasterio.features.shapes(binary_image, connectivity=8)
@@ -151,9 +198,22 @@ class RegionNetPostProcessor(ABC):
 
     @abstractmethod
     def post_process(self, net_output):
+        """
+        An abstract method that should be implemented by the subclasses. Given the output ``net_output`` of an image
+        segmentation algorithm, apply a post processing to the output, e.g. converting the binary image to a set of
+        polygons representing the contours of its connected components.
+        :param net_output: The binary net output of a neural image segmentation algorithm.
+        :return:
+        """
         pass
 
     def apply_morphology_operators(self, image, kernel=None):
+        """
+        Apply some morphology operators with a kernel given by ``kernel`` to the input image ``image``.
+        :param image: The input image.
+        :param kernel: The shape of the kernel, see cv2.morphologyEx.
+        :return: Image with the morphology operators applied to the input.
+        """
         if kernel is None:
             kernel = np.ones([8, 1], np.uint8)
 
@@ -168,6 +228,15 @@ class RegionNetPostProcessor(ABC):
         return image
 
     def apply_cc_analysis(self, net_output, threshold):
+        """
+        Apply connected component analysis to the net output ``net_output`` of an image segmentation algorithm, and remove
+        all connected components that have a size smaller than `H*W*threshold` where `H*W` is the number of pixels in
+        the ``net_output``.
+        :param net_output: Binary net output coming from the image segmentation.
+        :param threshold: Connected components that have a size smaller than the total amount of pixels in the net
+        output image multiplied with this value get rejected.
+        :return: The modified net output with too small connected components removed.
+        """
         nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(net_output, connectivity=8)
         sizes = stats[1:, -1]
         nb_components = nb_components - 1
@@ -182,6 +251,13 @@ class RegionNetPostProcessor(ABC):
         return net_output_new
 
     def rescale_polygons(self, polygons_dict, scaling_factor):
+        """
+        Given a dictionary of polygons ``polygons_dict`` (where the keys are the region names) this method rescales all
+        of the polygons according to ``scaling_factor``.
+        :param polygons_dict:
+        :param scaling_factor:
+        :return:
+        """
         for region_name, polygon_list in polygons_dict.items():
             new_polygon_list = []
             for polygon in polygon_list:

@@ -30,11 +30,11 @@ def smooth_article_surrounding_polygons(asp_dict, poly_norm_dist=10, orientation
     """
     Create smoothed polygons over "crooked" polygons, belonging to different article_ids.
 
-    1.) The polygon gets normalized, where the resulting vertices are at most `poly_norm_dist` pixels apart.
+    1.) The polygon gets normalized, where the resulting vertices are at most ``poly_norm_dist`` pixels apart.
 
     2.) For each vertex of the original polygon an orientation is determined:
 
-    2.1) Four rectangles (North, East, South, West) are generated, with the dimensions given by `or_dims`
+    2.1) Four rectangles (North, East, South, West) are generated, with the dimensions given by ``or_dims``
     (width_vertical, height_vertical, width_horizontal, height_horizontal), i.e. North and South rectangles
     have dimensions width_v x height_v, whereas East and West rectangles have dimensions width_h x height_h.
 
@@ -421,7 +421,7 @@ def merge_article_rectangles_vertically(article_rectangles_dict, min_width_inter
 
 def get_article_rectangles_from_surr_polygons(page, use_max_rect_size=True, max_d=0, max_rect_size_scale=1 / 50,
                                               max_d_scale=1 / 20):
-    """Given the PageXml file `page` return the corresponding article subregions as a list of ArticleRectangle objects.
+    """Given the PageXml file ``page`` return the corresponding article subregions as a list of ArticleRectangle objects.
      Also returns the width and height of the image (NOT of the PrintSpace).
 
     :param page: Either the path to the PageXml file or a Page object.

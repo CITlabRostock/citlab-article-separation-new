@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+
+"""
+Many parts are taken from the PageXml class in https://github.com/Transkribus/TranskribusPyClient
+(src/TranskribusDU/xml_formats/PageXml.py).
+"""
 import datetime
 import logging
 import os
@@ -21,7 +26,7 @@ logger = logging.getLogger("Page")
 
 class Page:
     """
-    Various utilities to deal with PageXml format
+    This class is used to load, change and save files in the PAGE-XML format.
     """
 
     def __init__(self, path_to_xml=None, creator_name=page_const.sCREATOR, img_filename=None, img_w=None, img_h=None):
@@ -137,6 +142,13 @@ class Page:
         return nd_metadata
 
     def create_metadata(self, creator_name=page_const.sCREATOR, comments=None):
+        """
+        Creates the metadata for a PAGE-XML file.
+
+        :param creator_name: Name of the creator of the file.
+        :param comments: Additionial comments.
+        :return: Metadata.
+        """
         xml_page_root = self.page_doc.getroot()
 
         metadata = etree.Element('{%s}%s' % (page_const.NS_PAGE_XML, page_const.sMETADATA_ELT))
@@ -242,6 +254,13 @@ class Page:
         # First key
 
     def set_custom_attr_from_dict(self, nd, custom_dict):
+        """
+        Set the custom attribute of a PAGE-XML node `nd` given by the dictionary `custom_dict`.
+
+        :param nd: XML node where the custom attribute should be set.
+        :param custom_dict: Custom attribute to set.
+        :return:
+        """
         nd.set(page_const.sCUSTOM_ATTR, page_util.format_custom_attr(custom_dict))
         return nd
 
@@ -263,6 +282,14 @@ class Page:
         return s_val
 
     def remove_custom_attr(self, nd, s_attr_name, s_sub_attr_name):
+        """
+        Removes one custom attribute from a PAGE-XML node `nd` with name `s_attr_name` and subname `s_sub_attr_name`.
+
+        :param nd: XML node.
+        :param s_attr_name: Name of the custom attribute.
+        :param s_sub_attr_name: Name of the attribute of one specific custom attribute.
+        :return:
+        """
         ddic = self.parse_custom_attr(nd.get(page_const.sCUSTOM_ATTR))
         if s_attr_name in ddic and s_sub_attr_name in ddic[s_attr_name]:
             ddic[s_attr_name].pop(s_sub_attr_name)
@@ -294,6 +321,12 @@ class Page:
 
     @classmethod
     def get_text_equiv(cls, nd):
+        """
+        Returns the text stored in the TextEquiv field for a PAGE-XML node `nd`.
+
+        :param nd: XML node.
+        :return: The corresponding text inside TextEquiv.
+        """
         textequiv = cls.get_child_by_name(nd, page_const.sTEXTEQUIV)
         if not textequiv:
             return ''
@@ -353,6 +386,12 @@ class Page:
     # ======== ARTICLE STUFF =========
 
     def get_article_dict(self):
+        """
+        Returns a dictionary containing the article ids as keys and a list of associated text lines that belong to this
+        article as items.
+
+        :return: Dictionary of article ids with their corresponding text lines.
+        """
         article_dict = {}
         for tl in self.textlines:
             a_id = tl.get_article_id()
@@ -364,6 +403,11 @@ class Page:
         return article_dict
 
     def get_image_resolution(self):
+        """
+        Returns the image resolution stored in the PAGE-XML file as a tuple (width, height).
+
+        :return: Tuple (width, height) of the corresponding image.
+        """
         page_nd = self.get_child_by_name(self.page_doc, "Page")[0]
         img_width = int(page_nd.get("imageWidth"))
         img_height = int(page_nd.get("imageHeight"))
@@ -371,6 +415,11 @@ class Page:
         return img_width, img_height
 
     def get_print_space_coords(self):
+        """
+        Returns the print coordinates of the file, if given.
+
+        :return: Print coordinates, which should be four points that form a rectangle.
+        """
         ps_nd = self.get_child_by_name(self.page_doc, page_const.sPRINT_SPACE)
 
         if len(ps_nd) != 1:
@@ -407,6 +456,7 @@ class Page:
     def get_ids(self):
         """
         Return a list of all current ids used in the PAGE object.
+
         :return: list of ids
         """
         return self.page_doc.xpath("//@id")
@@ -415,6 +465,7 @@ class Page:
         """
         For a specific page object with name `page_object_name` (e.g. TextRegion or TextLine) find an ID that is not
         already taken. The new ID has the format `{page_object_name}_[1-9][0-9]*`
+
         :param page_object_name: type of the page object, e.g. TextRegion or TextLine
         :return: a unique ID for the Page object
         """
@@ -426,6 +477,14 @@ class Page:
         return None
 
     def get_text_regions(self, text_region_type=None):
+        """
+        Returns all the TextRegions in a PAGE-XML file of a specific `text_region_type`. TextRegions with no type are
+        interpreted as TextRegions of type "paragraph". If `text_region_type` is None, then all TextRegions regardless
+        the type are returned.
+
+        :param text_region_type: Type of the TextRegion, e.g. "paragraph" or "heading".
+        :return: List of all text region objects of the specific type.
+        """
         text_region_nds = self.get_child_by_name(self.page_doc, page_const.sTEXTREGION)
         res = []
         if len(text_region_nds) > 0:
@@ -447,6 +506,12 @@ class Page:
         return res
 
     def remove_regions(self, region_type):
+        """
+        Removes all regions of a specific type (`region_type`) from the PAGE-XML.
+
+        :param region_type: The type of region to remove.
+        :return:
+        """
         if region_type not in REGIONS_DICT:
             logger.info("There is no region with type {}, skipping.".format(region_type))
             return
@@ -461,6 +526,12 @@ class Page:
             self.remove_page_xml_node(r_nd)
 
     def get_regions(self):
+        """
+        Returns all regions as a dictionary where the keys are the region names and the items are lists of region
+        objects.
+
+        :return:
+        """
         res = {}
         for r_name in REGIONS_DICT.keys():
             if r_name == page_const.sTEXTREGION:
@@ -479,6 +550,17 @@ class Page:
         return res
 
     def get_textlines(self, text_region_nd=None, ignore_redundant_textlines=True):
+        """
+        Returns all text lines as TextLine objects as a list. If the node of a TextRegion `text_region_nd` is specified
+        only the text lines of this text region are returned. If `ignore_redundant_textlines` is True, only the first
+        occurrence of a text line with a specific id is returned (note, that this should not happen, since ids should be
+        unique!!).
+
+        :param text_region_nd: XML node of a TextRegion.
+        :param ignore_redundant_textlines: Only add the first occurrence of a text line with a specific id,
+        ignore duplicates.
+        :return:
+        """
         if text_region_nd is not None:
             tl_nds = self.get_child_by_name(text_region_nd, page_const.sTEXTLINE)
         else:
@@ -507,6 +589,15 @@ class Page:
         return res
 
     def get_words(self, text_line_nd=None, ignore_redundant_words=True):
+        """
+        Returns all word nodes as Word objects. If a TextLine node is specified, only the words corresponding to this
+        text line are returned. If `ignore_redundant_words` is True, only the first occurrence of a word with a specific
+        id is returned (note, that this should not happen, since ids should be unique!!).
+
+        :param text_line_nd: XML node of a TextLine.
+        :param ignore_redundant_words: Only add the first occurrence of a word with a specific id, ignore duplicates.
+        :return:
+        """
         if text_line_nd is not None:
             word_nds = self.get_child_by_name(text_line_nd, page_const.sWORD)
         else:
@@ -526,15 +617,20 @@ class Page:
 
         return res
 
-
     def update_textlines(self):
+        """
+        Update the text lines of `self`.
+
+        :return:
+        """
         self.textlines = self.get_textlines()
 
     def set_textline_attr(self, textlines):
         """
+        Overwrite the custom attribute associated with a TextLine in `self` according to the list of TextLine objects
+        given by `textlines`.
 
         :param textlines: list of TextLine objects
-        :type textlines: list of TextLine
         :return: None
         """
         for tl in textlines:
@@ -555,6 +651,14 @@ class Page:
             # cls.set_custom_attr(tl_nd, "structure", "type", "article")
 
     def add_region(self, region, overwrite=False):
+        """
+        Add a `region` to the PAGE-XML file. If it already exists (check id), overwrite it if `overwrite` is True,
+        otherwise ignore it.
+
+        :param region: Region to add.
+        :param overwrite: Overwrite region in PAGE-XML file if already existent (check id).
+        :return:
+        """
         # TODO: Check if region is overlapping with other regions. Add reading order.
         page_nd = self.get_child_by_name(self.page_doc, "Page")[0]
 
@@ -576,6 +680,14 @@ class Page:
             page_nd.append(region_nd)
 
     def set_text_regions(self, text_regions, overwrite=False):
+        """
+        Update the text regions in the PAGE-XML document with the text regions given by `text_regions`. If `overwrite`
+        is True, overwrite TextRegions with the same id, otherwise ignore them.
+
+        :param text_regions: List of TextRegion objects that should be written to the PAGE-XML document.
+        :param overwrite: Overwrite regions in PAGE-XML file if already existent (check id).
+        :return:
+        """
         # TODO: Define behaviour for overwrite=False
         if overwrite:
             current_text_region_nds = self.get_child_by_name(self.page_doc, page_const.sTEXTREGION)
@@ -588,6 +700,15 @@ class Page:
             page_nd.append(text_region_nd)
 
     def set_text_lines(self, text_region, text_lines, overwrite=False):
+        """
+        Update the text lines in the PAGE-XML document with the text lines given by `text_lines` for a specific text
+        region (`text_region`). If `overwrite` is True, overwrite TextLines with the same id, otherwise ignore them.
+
+        :param text_region: The region where the TextLines should be updated.
+        :param text_lines: List of TextLine objects that should be written to the PAGE-XML document.
+        :param overwrite: Overwrite text lines in PAGE-XML file if already existent (check id).
+        :return:
+        """
         if type(text_region) == page_objects.TextRegion:
             text_region_nd = self.get_child_by_id(self.page_doc, text_region.id)[0]
         else:
@@ -631,7 +752,13 @@ class Page:
     # =========== CREATION ===========
     def create_page_xml_document(self, creator_name=page_const.sCREATOR, filename=None, img_w=0, img_h=0):
         """
-            create a new PageXml document
+        Create a new PAGE-XML document
+
+        :param creator_name: Name of the creator.
+        :param filename: Name of the associated image file.
+        :param img_w: Width of the image.
+        :param img_h: Height of the image.
+        :return: Page Doc node.
         """
         xml_page_root = etree.Element('{%s}PcGts' % page_const.NS_PAGE_XML,
                                       attrib={"{" + page_const.NS_XSI + "}schemaLocation": page_const.XSILOCATION},
@@ -666,7 +793,10 @@ class Page:
     @classmethod
     def create_page_xml_node(cls, node_name):
         """
-            create a PageXMl element
+        Create a PAGE-XML element.
+
+        :param node_name: Name of the XML node.
+        :return: Created XML node.
         """
         node = etree.Element('{%s}%s' % (page_const.NS_PAGE_XML, node_name))
 
@@ -674,14 +804,17 @@ class Page:
 
     def remove_page_xml_node(cls, nd: etree.ElementBase):
         """
-            remove a PageXml element
+        Remove a PAGE-XML element.
+
+        :param nd: The node to remove.
+        :return:
         """
         nd.getparent().remove(nd)
 
     def insert_page_xml_node(self, parent_nd, node_name):
-        """ Add PageXml node as child node of ``parent_nd``.
+        """ Add PAGE-XML node as child node of ``parent_nd``.
 
-        :param parent_nd: node where PageXml node is added as child
+        :param parent_nd: node where PAGE-XML node is added as child
         :param node_name: name of the node
         :return: the inserted node
         """
@@ -691,9 +824,10 @@ class Page:
         return node
 
     def load_page_xml(self, path_to_xml):
-        """Load PageXml file located at ``path_to_xml`` and return a DOM node.
+        """
+        Load PAGE-XML file located at ``path_to_xml`` and return a DOM node.
 
-        :param path_to_xml: path to PageXml file
+        :param path_to_xml: Path to the PAGE-XML file.
         :return: DOM document node
         :rtype: etree._ElementTree
         """
@@ -705,10 +839,10 @@ class Page:
         return page_doc
 
     def write_page_xml(self, save_path, creator=page_const.sCREATOR, comments=None):
-        """Save PageXml file to ``save_path``.
+        """Save PAGE-XML file to ``save_path``.
 
-        @:param save_path:
-        @:return: None
+        :param save_path: Save PAGE-XML at this path.
+        :return: None
         """
         self.set_metadata(creator, comments)
 
@@ -718,6 +852,12 @@ class Page:
 
     @staticmethod
     def _get_transkribus_meta_from_nd(nd_transkribus_meta):
+        """
+        Return a TranskribusMetadata object from a DOM node.
+
+        :param nd_transkribus_meta: The Transkribus metadata PAGE-XML node.
+        :return: TranskribusMetadata object.
+        """
         if nd_transkribus_meta is None:
             return None
 

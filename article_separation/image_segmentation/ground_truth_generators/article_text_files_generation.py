@@ -3,8 +3,20 @@ import os
 
 from python_util.parser.xml.page.page import Page
 
+from typing import List
+
 
 def create_text_file_from_page(page: Page, path_to_save_file=None):
+    """
+    Given a PAGE-XML document ```page```, write the text of its text lines into a file given by ```path_to_save_file```. Organize the
+    text by articles.
+
+    :param page: Given Page object from which the text is to be extracted article-wise.
+    :type page: Page
+    :param path_to_save_file: Path to the text file where the text should be stored.
+    :type path_to_save_file: str
+    :return:
+    """
     article_dict = page.get_article_dict()
     with open(path_to_save_file, 'w') as f:
         for i, textlines in enumerate(article_dict.values()):
@@ -16,6 +28,16 @@ def create_text_file_from_page(page: Page, path_to_save_file=None):
 
 
 def create_text_files_from_page_list(page_list, path_to_save_folder=None):
+    """
+    Given a list of PAGE-XML documents ```page_list```, write the text of their text lines into different files inside the
+    ```path_to_save_folder```. Organize the text by articles.
+
+    :param page_list: Given list of PAGE-XML paths from which the text is to be extracted article-wise.
+    :type page_list: List[str]
+    :param path_to_save_folder: Path to the folder where the text should be stored inside text files.
+    :type path_to_save_folder: str
+    :return:
+    """
     for page in page_list:
         page_file_name = os.path.basename(page)
         if path_to_save_folder:

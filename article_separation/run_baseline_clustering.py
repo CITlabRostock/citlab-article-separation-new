@@ -17,7 +17,7 @@ def worker(sample, counter, flags, skipped_files):
                           "--des_dist", str(flags.des_dist),
                           "--max_d", str(flags.max_d),
                           "--use_java_code", str(flags.use_java_code),
-                          "--target_average_interline_distance", str(flags.target_average_interline_distance)],
+                          "--target_avg_interline_distance", str(flags.target_average_interline_distance)],
                          shell=False, stdout=subprocess.PIPE)
 
     # get the print information of the baseline_clustering.py code

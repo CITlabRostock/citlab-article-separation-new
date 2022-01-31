@@ -3,7 +3,7 @@
 
 > Python modules for different tasks:
 > - separating articles in (historical) newspapers or similar documents (`article_separation`)
-> - measuring the performance of article separation algorithms (`article_separation_measure`)
+> - measuring the performance of article separation algorithms (`article_separation_measure` and `as_eval`)
 > - utility functions, e.g. for plotting images together with metadata information (`python_util`)
 
 <!-- TOC -->
@@ -13,6 +13,7 @@
 * [Main Packages](#main-packages)
 	* [article_separation](#article_separation)
 	* [article_separation_measure](#article_separation_measure)
+	* [as_eval](#as_eval)
 	* [python_util](#python_util)
 * [Usage](#usage)
 * [See Also](#see-also)
@@ -41,6 +42,8 @@ In the following image a schematic overview of the overall AS workflow can be fo
 The Python modules in this repository are all tested with Python 3.6. The best way to use the modules is by creating
 a virtual environment and install the packages given in the `requirements.txt` file.
 
+The packages should work with TensorFlow 1.12 (`pip install tensorflow==1.12`) to TensorFlow 1.14 (`pip install tensorflow==1.14`).
+
 ## Main Packages / Usage
 
 All modules work with metadata information stored in the well-established 
@@ -67,13 +70,13 @@ public deliverables is given [here](https://cordis.europa.eu/project/id/770299/r
 
 #### Separator Detection
 This module is used to detect visible vertical and horizontal separators on a newspaper page. To use it a TensorFlow 
-model is needed that was trained on an image segmentation task. The underlying model we used is the so called 
+model is needed that was trained on an image segmentation task. An example network can be found in `nets/separator_detection_net.pb`. The underlying model we used is the so called 
 [ARU-Net](https://arxiv.org/abs/1802.03345) which is a U-Net extended by two key concepts, attention (A) and
 depth (residual structures (R)). To run the separator detection use the `run_net_post_processing.py` file like in the 
 following example.
 
 ```bash
-python -u run_net_post_processing.py --path_to_image_list "/path/to/image/list" --mode "separator" --num_processes N
+python -u run_net_post_processing.py --path_to_image_list "/path/to/image/list" --path_to_pb "/path/to/separator_detection_graph.pb" --mode "separator" --num_processes N
 ```
 
 #### Text Block Detection
@@ -91,12 +94,12 @@ python -u run_textregion_generation.py --path_to_xml_lst "/path/to/xml/list" --n
 ```
 #### Heading Detection
 The heading detection combines a distance transformation for detecting approximate text heights and stroke widths with 
-an image segmentation approach that detects headings in an image. The results of both approaches are combined in a 
+an image segmentation approach that detects headings in an image. An example network can be found in `nets/heading_detection_net.pb`. The results of both approaches are combined in a 
 weighted manner where most weight is put on the net output. To run the heading detection use the 
 `run_net_post_processing.py` file like in the following example.
 
 ```bash
-python -u run_net_post_processing.py --path_to_image_list "/path/to/image/list" --mode "heading" --num_processes N
+python -u run_net_post_processing.py --path_to_image_list "/path/to/image/list" --path_to_pb "/path/to/heading_detection_graph.pb" --mode "heading" --num_processes N
 ```
 #### Graph Neural Network
 This module is used to solve a relation prediction task, i.e. to predict which text blocks belong to the same article. 
@@ -155,6 +158,8 @@ that in this case the corresponding image files will be needed.
 The output of this module will be new PAGE-XML files containing the final clustering results, which represent the found
 articles.
 
+-----------
+
 ### article_separation_measure
 This package contains a method to measure the performance of an AS algorithm. It is based on the baseline detection 
 measure that was already used at competition like the *ICDAR 2017 Competition on Baseline Detection* and a description 
@@ -168,6 +173,53 @@ compare to. The run script is given by `run_measure.py` and can be executed as i
 ```bash
 python -u run_measure.py --path_to_hyp_xml_lst "/path/to/hyp/xml/list" --path_to_gt_xml_lst "/path/to/gt/xml/list"
 ```
+
+-----------
+
+### as_eval
+This is another package for evaluating an AS as described in deliverable `D2.7 v6.0` based on how many splits and merges of partition blocks (e.g. text blocks) are needed to convert the ground truth to the hypothesis.
+
+####   Minimal example run script
+-   `minRunEx.py`
+-   works on example data in
+~~~
+../work/
+    ├ page/example-[1..?].xml               PAGE-XML with ground truth article separation
+    └ clustering/                           PAGE-XML with hypotheses …
+        └ method-[1..?]/example-[1..?].xml  … for various methods
+~~~
+
+- Simplification: For correct interpretation & labeling, a hypothesis' PAGE-XML parent directory's name must be the method's name.
+  (cf. `SepPageCompDict.path2method`)
+
+####  Result interpretation
+
+##### SepPageComparison container
+- container for counting results
+- collected in `SepPageCompDict`
+- … counts number of …
+  - `gtNIs` … articles in ground truth
+  - `hypNIs` … articles in hypothesis
+  - `corrects` … properly separated articles in hypothesis
+- walking from the ground truth partition to the the hypothesis partition requires … 
+    - `splits` many splittings of partition blocks (increasing their number, thus understood to be ≥0)
+    - `merges` many mergings of partition blocks (decreasing their number, thus understood to be ≤0)
+- … resulting in a partition distance of `dist` = `splits` -  `merges`
+- … and requiring consistency (checked by `SepPageComparison.checkConsistency`)
+`gtNIs` + `splits` -  `merges` = `hypNIs`
+
+##### XLSX file
+`SepPageComparison` containers are ordered by ascending `dist` firstly and descending `corrects` then. In this sense, one method yielded a better article separation, i.e. _gains a victory_ over the other method. We count such _wins_, where (1) ties are also counted as wins, and (2) each method is also compared against itself.
+Note that, due to these (laziness!) conditions, all counters always include victories against oneself, i.e. are the number of samples at least.
+
+The `example` worksheet(s) (in general: named after the dataset(s)) contain(s) results for pairwise comparison, where
+- main diagonal entries simply count, hence must be equal to the number of comparisons, thus serving as a plausibility check made possible by conditions (1) and (2);
+- off-diagonal entries show the ratio between victories of the row-head method over the column-head method, thus resulting in a "reciprocal symmetric" matrix;
+- the first column counts all victories of the row-head method.
+
+The `winner` worksheet contains the overall numbers of all victories of the row-head method in any of the datasets under consideration. In column `B`, this includes all methods under investigation. Then the methods with the fewest victories are removed step-by-step, and the number of victories is computed w.r.t. the reduced set of methods only. This yields the values in the subsequent columns, and it stops when in the last column, only the winner method is compared against itself, which obviously must yield the number of investigated samples as another plausibility check.
+
+-----------
 
 ### python_util
 This package contains multiple utility functions that are used by the `article_separation` package. The most important 

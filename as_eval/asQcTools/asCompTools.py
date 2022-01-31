@@ -181,11 +181,11 @@ class SepPageCompDict(dict):
             csvReader = DictReader(csvFile)
             for dataDict in csvReader:
                 if dataDict.get('method').lower() in inclList:
-                    if not (dataSet := dataDict.get('dataSet')) in self:
-                        self[dataSet] = {}
+                    if not dataDict.get('dataSet') in self:
+                        self[dataDict.get('dataSet')] = {}
                     setDict = self[dataSet]
-                    if not (gtXML := dataDict.get('gtXML')) in setDict:
-                        setDict[gtXML] = {}
+                    if not dataDict.get('gtXML') in setDict:
+                        setDict[dataDict.get('gtXML')] = {}
                     gtDict = setDict[gtXML]
                     spc = SepPageComparison()
                     spc.loadDict(dataDict)

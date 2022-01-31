@@ -6,7 +6,7 @@ import logging
 from pathlib import Path, PurePosixPath
 from enum import Enum, auto, unique
 from json import JSONEncoder
-from typing import Any
+from typing import Any, Union, Set, List
 
 from python_util.parser.xml.page.page import Page
 
@@ -67,7 +67,7 @@ class AsProbDict:
         return repStr
 
 
-def asProbJSON(asProbObj: [AsProbCode | AsProbDict]) -> [str | dict]:
+def asProbJSON(asProbObj: Union[AsProbCode, AsProbDict]) -> Union[str, dict]:
     if isinstance(asProbObj, AsProbCode):
         return asProbObj.name
     elif isinstance(asProbObj, AsProbDict):
@@ -82,8 +82,8 @@ class AsChecker:
     probDesc: AsProbDesc = AsProbDesc()
 
     @classmethod
-    def _buildWorkList(cls, codeSet: set[AsProbCode]) -> list[tuple]:
-        workList: list = []
+    def _buildWorkList(cls, codeSet: Set[AsProbCode]) -> List[tuple]:
+        workList: List = []
         usedCodeSet = set()
         for (codeList, methodBase) in asCheckerList:
             actCodeSet = set(codeList).intersection(codeSet)
@@ -99,15 +99,15 @@ class AsChecker:
         else:
             raise RuntimeError(f'no checks to be performed » exciting')
 
-    def __init__(self, codeSet: set[AsProbCode]):
+    def __init__(self, codeSet: Set[AsProbCode]):
         (workList, usedCodeSet) = self._buildWorkList(codeSet=codeSet)
-        self.workList: list[tuple] = workList
-        self.pageList: list[Path] = []
+        self.workList: List[tuple] = workList
+        self.pageList: List[Path] = []
         self.probDict: dict = {}
         self.cntProbs: int = 0
         self.cntDict: dict = {code.name: 0 for code in usedCodeSet}
-        self.actCodeSet: set[AsProbCode] = set()
-        self.actPage: [Page | None] = None
+        self.actCodeSet: Set[AsProbCode] = set()
+        self.actPage: Union[Page, None] = None
 
     def probToJSON(self) -> str:
         """json representation of the check results"""
@@ -136,29 +136,29 @@ class AsChecker:
             if len(self.probDict[pageName]) == 0:
                 del self.probDict[pageName]
 
-    def _checkTL1(self) -> list[AsProbDict]:
+    def _checkTL1(self) -> List[AsProbDict]:
         """checks for problem: textlines without text or article_id"""
         probList = []
         for textLine in self.actPage.get_textlines(ignore_redundant_textlines=True):
-            if (probCode := AsProbCode.TL_11) in self.actCodeSet:
-                logger.debug(f'checking: {self.probDesc.getWithDefault(probCode)}')
+            if AsProbCode.TL_11 in self.actCodeSet:
+                logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TL_11)}')
                 if len(textLine.text) == 0:
                     prob = AsProbDict(code=probCode, entity=textLine.id, remark='empty')
                     probList.append(prob)
                     self.cntDict[probCode.name] += 1
-            if (probCode := AsProbCode.TL_12) in self.actCodeSet:
-                logger.debug(f'checking: {self.probDesc.getWithDefault(probCode)}')
+            if AsProbCode.TL_12 in self.actCodeSet:
+                logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TL_12)}')
                 if textLine.get_article_id() is None:
                     prob = AsProbDict(code=probCode, entity=textLine.id, remark='w/o article')
                     probList.append(prob)
                     self.cntDict[probCode.name] += 1
         return probList
 
-    def _checkTL2(self) -> list[AsProbDict]:
+    def _checkTL2(self) -> List[AsProbDict]:
         """checks for problem: textlines without text or article_id"""
         probList = []
-        if (probCode := AsProbCode.TL_21) in self.actCodeSet:
-            logger.debug(f'checking: {self.probDesc.getWithDefault(probCode)}')
+        if AsProbCode.TL_21 in self.actCodeSet:
+            logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TL_21)}')
             textLineList = sorted(self.actPage.get_textlines(ignore_redundant_textlines=True), key=lambda x: x.id)
             for (idx, textLine1) in enumerate(textLineList):
                 for textLine2 in textLineList[idx + 1:]:
@@ -168,16 +168,16 @@ class AsChecker:
                         self.cntDict[probCode.name] += 1
         return probList
 
-    def _checkTR(self) -> list[AsProbDict]:
+    def _checkTR(self) -> List[AsProbDict]:
         """checks for problem: textregions with multiple article_ids"""
         probList = []
         for textRegion in self.actPage.get_text_regions():
-            if (probCode := AsProbCode.TR_11) in self.actCodeSet:
-                logger.debug(f'checking: {self.probDesc.getWithDefault(probCode)}')
+            if AsProbCode.TR_11 in self.actCodeSet:
+                logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TR_11)}')
                 artIdSet = set()
                 for textLine in textRegion.text_lines:
-                    if (artId := textLine.get_article_id()) is not None:
-                        artIdSet.add(artId)
+                    if textLine.get_article_id() is not None:
+                        artIdSet.add(textLine.get_article_id())
                 if len(artIdSet) > 1:
                     prob = AsProbDict(code=probCode, entity=textRegion.id, remark=str(artIdSet))
                     probList.append(prob)

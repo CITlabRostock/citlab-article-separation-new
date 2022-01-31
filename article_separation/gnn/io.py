@@ -3,8 +3,25 @@ import os
 import json
 import logging
 import re
+import tensorflow as tf
 from scipy.stats import gmean
 from python_util.parser.xml.page.page import Page
+
+
+def load_graph(pb_path):
+    """Loads TensorFlow graph from a protobuf"""
+    # We load the protobuf file from the disk and parse it to retrieve the
+    # unserialized graph_def
+    with tf.io.gfile.GFile(pb_path, "rb") as f:
+        graph_def = tf.compat.v1.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+    # Then, we can use again a convenient built-in function to import a graph_def into the
+    # current default Graph
+    with tf.Graph().as_default() as graph:
+        tf.import_graph_def(graph_def, input_map=None, return_elements=None, name="",
+                            producer_op_list=None)
+    return graph
 
 
 def save_conf_to_json(confidences, page_path, save_dir, symmetry_fn=gmean):

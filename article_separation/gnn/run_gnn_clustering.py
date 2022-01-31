@@ -3,35 +3,30 @@ import time
 import os
 import numpy as np
 import tensorflow as tf
+import multiprocessing as mp
 from tensorflow.compat.v1 import placeholder as ph
-from sklearn.metrics import precision_recall_curve
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib import pyplot as plt
-
 import python_util.basic.flags as flags
-from article_separation.gnn.input.input_dataset import InputGNN
-from article_separation.gnn.clustering.textblock_clustering import TextblockClustering
-from article_separation.gnn.io import plot_graph_clustering_and_page, save_clustering_to_page, \
-    save_conf_to_json, build_thresholded_relation_graph
-from python_util.io.path_util import *
+from python_util.io.path_util import get_path_from_exportdir, get_page_from_json_path
+from python_util.basic.misc import split_list
 from python_util.parser.xml.page.page import Page
-from article_separation.gnn.input.feature_generation import discard_text_regions_and_lines as discard_regions
-
+from article_separation.gnn.input.input_dataset import InputGNN
+from article_separation.gnn.input.feature_generation import is_aligned_horizontally_separated, is_aligned_heading_separated
+from article_separation.gnn.clustering.textblock_clustering import TextblockClustering
+from article_separation.gnn.io import save_clustering_to_page, save_conf_to_json, load_graph
 
 # General
 # =======
-flags.define_string('model_dir',  '', 'Checkpoint containing the exported model')
-flags.define_string('eval_list',   '', '.lst-file specifying the dataset used for evaluation')
+flags.define_string('model_dir', '', 'Checkpoint containing the exported model')
+flags.define_string('eval_list', '', '.lst-file specifying the dataset used for evaluation')
 flags.define_integer('batch_size', 1, 'number of elements to be evaluated in each batch (default: %(default)s).')
 
 # Model parameter
 # ===============
-flags.define_integer('num_classes',             2, 'number of classes (including garbage class)')
+flags.define_integer('num_classes', 2, 'number of classes (including garbage class)')
 flags.define_integer('num_relation_components', 2, 'number of components of the associated relations')
-flags.define_boolean('sample_relations',    False, 'sample relations to consider or use full graph')
 flags.define_integer('sample_num_relations_to_consider', 100,
-                     'number of sampled relations to be tested (half pos, half neg)')
+                     'number of sampled relations to be tested (half positive, half negative)')
+flags.define_boolean('sample_relations', False, 'sample relations to consider or use full graph')
 
 # Visual input
 # ===============
@@ -43,361 +38,302 @@ flags.define_boolean('mvn', True, 'MVN on the image input')
 
 # Input function
 # ===============
-flags.define_boolean('create_data_from_pagexml', False,
-                     'generate input data on the fly from the pagexml or load it directly from json')
-flags.define_choices('interaction_from_pagexml', ['fully', 'delaunay'], 'fully', str, "('fully', 'delaunay')",
-                     'determines the setup of the interacting_nodes when loading from pagexml.')
 flags.define_dict('input_params', {}, "dict of key=value pairs defining the input configuration")
 
 # Confidences & Clustering
 # ========================
 flags.define_choices('clustering_method', ['dbscan', 'linkage', 'greedy', 'dbscan_std'], 'dbscan', str,
                      "('dbscan', 'linkage', 'greedy', 'dbscan_std')", 'clustering method to be used')
+flags.define_boolean('mask_horizontally_separated_confs', False,
+                     'set confidences of edges over horizontal separators, '
+                     'whose nodes are also vertically and horizontally aligned, to zero.')
+flags.define_boolean('mask_heading_separated_confs', False,
+                     'set confidences of edges from regions (upper) to headings (lower), '
+                     'whose nodes are also vertically and horizontally aligned, to zero.')
 flags.define_dict('clustering_params', {}, "dict of key=value pairs defining the clustering configuration")
 flags.define_string("out_dir", "", "directory to save graph confidences jsons and clustering pageXMLs. It retains the "
                                    "folder structure of the input data. Use an empty 'out_dir' for the original folder")
-flags.define_boolean("only_save_conf", False, "Only save the graph confidences and skip the clustering process")
+flags.define_choices('save_conf', ['no_conf', 'with_conf', 'only_conf'], 'no_conf', str,
+                     "('no_conf', 'with_conf', 'only_conf')", 'handles the saving of the graph confidences.')
 
 # Misc
 # ====
-flags.define_integer('num_p_r_thresholds', 20, 'number of thresholds used for precision-recall-curve')
+flags.define_integer('num_workers', 1, 'number of partitions to create from original list file and to compute in '
+                                       'parallel. Only works when no external jsons are used.')
 flags.define_list('gpu_devices', int, 'INT', 'list of GPU indices to use. ', [])
 flags.define_float('gpu_memory_fraction', 0.95, 'set between 0.1 and 1, value - 0.09 is passed to session_config, to '
                                                 'take overhead in account, smaller val_batch_size may needed, '
                                                 '(default: %(default)s)')
-flags.define_string("debug_dir", "", "directory to save debug outputs")
-flags.define_integer("batch_limiter", -1, "set to positiv value to stop validation after this number of batches")
+flags.define_integer("batch_limiter", -1, "set to positive value to stop validation after this number of batches")
 flags.FLAGS.parse_flags()
 flags.define_boolean("try_gpu", True if flags.FLAGS.gpu_devices != [] else False,
                      "try to load '<model>_gpu.pb' if possible")
 flags.FLAGS.parse_flags()
+FLAGS = flags.FLAGS
 
 
-class EvaluateRelation(object):
-    def __init__(self):
-        self._flags = flags.FLAGS
-        self._params = {'num_gpus': len(self._flags.gpu_devices)}
-        self._page_paths = None
-        self._json_paths = None
-        self._dataset = None
-        self._dataset_iterator = None
-        self._next_batch = None
-        self._pb_path = None
-        if self._flags.try_gpu:
+def get_placeholder(input_fn_params):
+    # Placeholders:
+    # 'num_nodes'             [batch_size]
+    # 'num_interacting_nodes' [batch_size]
+    # 'interacting_nodes'     [batch_size, max_num_interacting_nodes, 2]
+    # 'node_features'         [batch_size, max_num_nodes, node_feature_dim]
+    # 'edge_features'         [batch_size, max_num_interacting_nodes, edge_feature_dim]
+    # 'image'                 [batch_size, pad_height, pad_width, channels]
+    # 'image_shape'           [batch_size, 3]
+    # 'visual_regions_nodes'  [batch_size, max_num_nodes, 2, max_num_points_visual_regions_nodes]
+    # 'num_points_visual_regions_nodes' [batch_size, max_num_nodes]
+    # 'visual_regions_edges'  [batch_size, max_num_nodes, 2, max_num_points_visual_regions_edges]
+    # 'num_points_visual_regions_edges' [batch_size, max_num_nodes]
+    # 'relations_to_consider_belong_to_same_instance' [batch_size, max_num_relations, num_relation_components]
+    ph_dict = dict()
+    ph_dict['num_nodes'] = ph(tf.int32, [None], name='num_nodes')  # [batch_size]
+    ph_dict['num_interacting_nodes'] = ph(tf.int32, [None], name='num_interacting_nodes')  # [batch_size]
+    ph_dict['interacting_nodes'] = ph(tf.int32, [None, None, 2],
+                                      name='interacting_nodes')  # [batch_size, max_num_interacting_nodes, 2]
+
+    # add node features if present
+    if 'node_feature_dim' in input_fn_params and input_fn_params["node_feature_dim"] > 0:
+        # feature dim by masking
+        if 'node_input_feature_mask' in input_fn_params:
+            node_feature_dim = input_fn_params["node_input_feature_mask"].count(True) if \
+                input_fn_params["node_input_feature_mask"] else input_fn_params["node_feature_dim"]
+        else:
+            node_feature_dim = input_fn_params["node_feature_dim"]
+        # [batch_size, max_num_nodes, node_feature_dim]
+        ph_dict['node_features'] = ph(tf.float32, [None, None, node_feature_dim], name='node_features')
+
+    # add edge features if present
+    if 'edge_feature_dim' in input_fn_params and input_fn_params["edge_feature_dim"] > 0:
+        # feature dim by masking
+        if 'edge_input_feature_mask' in input_fn_params:
+            edge_feature_dim = input_fn_params["edge_input_feature_mask"].count(True) if \
+                input_fn_params["edge_input_feature_mask"] else input_fn_params["edge_feature_dim"]
+        else:
+            edge_feature_dim = input_fn_params["edge_feature_dim"]
+        # [batch_size, max_num_interacting_nodes, edge_feature_dim]
+        ph_dict['edge_features'] = ph(tf.float32, [None, None, edge_feature_dim], name='edge_features')
+
+    # add visual features
+    if FLAGS.image_input:
+        if FLAGS.assign_visual_features_to_nodes or FLAGS.assign_visual_features_to_edges:
+            img_channels = 1
+            if 'load_mode' in input_fn_params and input_fn_params['load_mode'] == 'RGB':
+                img_channels = 3
+            # [batch_size, pad_height, pad_width, channels] float
+            ph_dict['image'] = ph(tf.float32, [None, None, None, img_channels], name="image")
+            # [batch_size, 3] int
+            ph_dict['image_shape'] = ph(tf.int32, [None, 3], name="image_shape")
+            if FLAGS.assign_visual_features_to_nodes:
+                # [batch_size, max_num_nodes, 2, max_num_points_visual_regions_nodes] float
+                ph_dict['visual_regions_nodes'] = ph(tf.float32, [None, None, 2, None], name="visual_regions_nodes")
+                # [batch_size, max_num_nodes] int
+                ph_dict['num_points_visual_regions_nodes'] = ph(tf.int32, [None, None],
+                                                                name="num_points_visual_regions_nodes")
+            if FLAGS.assign_visual_features_to_edges:
+                # [batch_size, max_num_nodes, 2, max_num_points_visual_regions_edges] float
+                ph_dict['visual_regions_edges'] = ph(tf.float32, [None, None, 2, None], name="visual_regions_edges")
+                # [batch_size, max_num_nodes] int
+                ph_dict['num_points_visual_regions_edges'] = ph(tf.int32, [None, None],
+                                                                name="num_points_visual_regions_edges")
+        else:
+            logging.warning(f"Image_input was set to 'True', but no visual features were assigned. Specify flags.")
+
+    # relations for evaluation
+    # [batch_size, max_num_relations, num_relation_components]
+    ph_dict['relations_to_consider_belong_to_same_instance'] = \
+        ph(tf.int32, [None, None, FLAGS.num_relation_components],
+           name='relations_to_consider_belong_to_same_instance')
+    return ph_dict
+
+
+def mask_horizontally_separated_confs(confs, page_path):
+    timer = time.time()
+    # get page information
+    page = Page(page_path)
+    regions = page.get_regions()
+    if FLAGS.mask_horizontally_separated_confs and 'SeparatorRegion' not in regions:
+        logging.warning(f"No separators found for confidence masking.")
+        return confs
+    text_regions = regions['TextRegion']
+    separator_regions = regions['SeparatorRegion']
+    num_text_regions = len(text_regions)
+    # compute mask
+    masked = np.ones_like(confs, dtype=np.int32)
+    for i in range(num_text_regions):
+        for j in range(i + 1, num_text_regions):
+            tr_i = text_regions[i]
+            tr_j = text_regions[j]
+            # mask edges over text regions which are vertically AND horizontally aligned (i.e. same column)
+            # and where the lower text region is a heading
+            if FLAGS.mask_heading_separated_confs:
+                if is_aligned_heading_separated(tr_i, tr_j):
+                    logging.debug(f"Pair ({i}, {j}) separated by heading. "
+                                  f"Previous confs: ({i}, {j}) = {confs[i, j]:.4f}, ({j}, {i}) = {confs[j, i]:.4f}")
+                    masked[i, j] = 0
+                    masked[j, i] = 0
+                    continue
+            # mask edges over text regions which are vertically AND horizontally aligned (i.e. same column)
+            # and separated by a horizontal separator region
+            if FLAGS.mask_horizontally_separated_confs:
+                if is_aligned_horizontally_separated(tr_i, tr_j, separator_regions):
+                    logging.debug(f"Pair ({i}, {j}) horizontally separated. "
+                                  f"Previous confs: ({i}, {j}) = {confs[i, j]:.4f}, ({j}, {i}) = {confs[j, i]:.4f}")
+                    masked[i, j] = 0
+                    masked[j, i] = 0
+    logging.info(f"Time for masking horizontally separated confidences = {time.time() - timer}.")
+    return masked * confs
+
+
+def gnn_clustering(json_paths):
+    # Get pb path
+    pb_path = None
+    if os.path.isfile(FLAGS.model_dir):
+        if not os.path.splitext(os.path.basename(FLAGS.model_dir))[1] == ".pb":
+            raise IOError(f"Given model path {FLAGS.model_dir} is not a .pb")
+        pb_path = FLAGS.model_dir
+    else:
+        if FLAGS.try_gpu:
             try:
-                self._pb_path = os.path.join(get_path_from_exportdir(self._flags.model_dir, "*_gpu.pb", "cpu"))
+                pb_path = os.path.join(get_path_from_exportdir(FLAGS.model_dir, "*_gpu.pb", "cpu"))
             except IOError:
                 logging.warning("Could not find gpu-model-pb-file, continue with cpu-model-pb-file")
-        if not self._pb_path:
-            self._pb_path = os.path.join(get_path_from_exportdir(self._flags.model_dir, "*best*.pb", "_gpu.pb"))
-        logging.info(f"pb_path is {self._pb_path}")
-        self._input_fn = InputGNN(self._flags)
-        self._tb_clustering = TextblockClustering(self._flags)
-        # Print params
-        flags.print_flags()
-        self._input_fn.print_params()
-        self._tb_clustering.print_params()
+        if not pb_path:
+            pb_path = os.path.join(get_path_from_exportdir(FLAGS.model_dir, "*best*.pb", "_gpu.pb"))
+    logging.info(f"pb_path is {pb_path}")
 
-    def _load_graph(self):
-        # We load the protobuf file from the disk and parse it to retrieve the
-        # unserialized graph_def
-        with tf.io.gfile.GFile(self._pb_path, "rb") as f:
-            graph_def = tf.compat.v1.GraphDef()
-            graph_def.ParseFromString(f.read())
+    # Build input function
+    input_fn = InputGNN(FLAGS)
 
-        # Then, we can use again a convenient built-in function to import a graph_def into the
-        # current default Graph
-        with tf.Graph().as_default() as graph:
-            tf.import_graph_def(graph_def, input_map=None, return_elements=None, name="",
-                                producer_op_list=None)
-        return graph
+    # Get corresponding pageXML files
+    page_paths = [get_page_from_json_path(json_path) for json_path in json_paths]
 
-    def _get_placeholder(self):
-        input_fn_params = self._input_fn.input_params
+    # Build Textblock clustering
+    tb_clustering = TextblockClustering(FLAGS)
 
-        ph_dict = dict()
-        ph_dict['num_nodes'] = ph(tf.int32, [None], name='num_nodes')  # [batch_size]
-        ph_dict['num_interacting_nodes'] = ph(tf.int32, [None], name='num_interacting_nodes')  # [batch_size]
-        ph_dict['interacting_nodes'] = ph(tf.int32, [None, None, 2], name='interacting_nodes')  # [batch_size, max_num_interacting_nodes, 2]
+    # Load graph
+    graph = load_graph(pb_path)
+    os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(str(x) for x in FLAGS.gpu_devices)
+    gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=FLAGS.gpu_memory_fraction - 0.09,
+                                          allow_growth=False)  # - 0.09 for memory overhead
+    session_config = tf.compat.v1.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)
+    sess = tf.compat.v1.Session(graph=graph, config=session_config)
 
-        # add node features if present
-        if 'node_feature_dim' in input_fn_params and input_fn_params["node_feature_dim"] > 0:
-            # feature dim by masking
-            if 'node_input_feature_mask' in input_fn_params:
-                node_feature_dim = input_fn_params["node_input_feature_mask"].count(True) if \
-                    input_fn_params["node_input_feature_mask"] else input_fn_params["node_feature_dim"]
-            else:
-                node_feature_dim = input_fn_params["node_feature_dim"]
-            # [batch_size, max_num_nodes, node_feature_dim]
-            ph_dict['node_features'] = ph(tf.float32, [None, None, node_feature_dim], name='node_features')
+    with sess.graph.as_default() as graph:
+        with tf.Graph().as_default():  # write dummy placeholder in another graph
+            placeholders = get_placeholder(input_fn.input_params)
 
-        # add edge features if present
-        if 'edge_feature_dim' in input_fn_params and input_fn_params["edge_feature_dim"] > 0:
-            # feature dim by masking
-            if 'edge_input_feature_mask' in input_fn_params:
-                edge_feature_dim = input_fn_params["edge_input_feature_mask"].count(True) if \
-                    input_fn_params["edge_input_feature_mask"] else input_fn_params["edge_feature_dim"]
-            else:
-                edge_feature_dim = input_fn_params["edge_feature_dim"]
-            # [batch_size, max_num_interacting_nodes, edge_feature_dim]
-            ph_dict['edge_features'] = ph(tf.float32, [None, None, edge_feature_dim], name='edge_features')
+        # Build dataset iterator
+        dataset = input_fn.get_dataset_from_file_paths(json_paths, is_training=False)
+        dataset_iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
+        next_batch = dataset_iterator.get_next()
 
-        # add visual features
-        if self._flags.image_input:
-            if self._flags.assign_visual_features_to_nodes or self._flags.assign_visual_features_to_edges:
-                img_channels = 1
-                if 'load_mode' in input_fn_params and input_fn_params['load_mode'] == 'RGB':
-                    img_channels = 3
-                # [batch_size, pad_height, pad_width, channels] float
-                ph_dict['image'] = ph(tf.float32, [None, None, None, img_channels], name="image")
-                # [batch_size, 3] int
-                ph_dict['image_shape'] = ph(tf.int32, [None, 3], name="image_shape")
-                if self._flags.assign_visual_features_to_nodes:
-                    # [batch_size, max_num_nodes, 2, max_num_points_visual_regions_nodes] float
-                    ph_dict['visual_regions_nodes'] = ph(tf.float32, [None, None, 2, None], name="visual_regions_nodes")
-                    # [batch_size, max_num_nodes] int
-                    ph_dict['num_points_visual_regions_nodes'] = ph(tf.int32, [None, None],
-                                                                    name="num_points_visual_regions_nodes")
-                if self._flags.assign_visual_features_to_edges:
-                    # [batch_size, max_num_nodes, 2, max_num_points_visual_regions_edges] float
-                    ph_dict['visual_regions_edges'] = ph(tf.float32, [None, None, 2, None], name="visual_regions_edges")
-                    # [batch_size, max_num_nodes] int
-                    ph_dict['num_points_visual_regions_edges'] = ph(tf.int32, [None, None],
-                                                                    name="num_points_visual_regions_edges")
-            else:
-                logging.warning(f"Image_input was set to 'True', but no visual features were assigned. Specify flags.")
+        output_node = graph.get_tensor_by_name("output_belong_to_same_instance:0")
+        feed_dict = {}
 
-        # relations for evaluation
-        # [batch_size, max_num_relations, num_relation_components]
-        ph_dict['relations_to_consider_belong_to_same_instance'] = \
-            ph(tf.int32, [None, None, self._flags.num_relation_components],
-               name='relations_to_consider_belong_to_same_instance')
-        # # [batch_size]
-        # ph_dict['num_relations_to_consider_belong_to_same_instance'] = \
-        #     ph(tf.int32, [None], name='num_relations_to_consider_belong_to_same_instance')
-        return ph_dict
+        batch_counter = 0
+        start_timer = time.time()
+        while True:  # Loop until dataset is empty
+            if FLAGS.batch_limiter != -1 and FLAGS.batch_limiter <= batch_counter:
+                logging.info(f"stop validation after {batch_counter} batches with "
+                             f"{FLAGS.batch_size} samples each.")
+                break
+            try:
+                page_path = page_paths.pop(0)
+                json_path = json_paths.pop(0)
+                logging.info(f"Page: {page_path}")
+                logging.info(f"Json: {json_path}")
 
-    def evaluate(self):
-        logging.info("Start evaluation...")
-        graph = self._load_graph()
-        os.environ["CUDA_VISIBLE_DEVICES"] = ','.join(str(x) for x in self._flags.gpu_devices)
-        gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=self._flags.gpu_memory_fraction - 0.09,
-                                              allow_growth=False)  # - 0.09 for memory overhead
-        session_config = tf.compat.v1.ConfigProto(gpu_options=gpu_options, allow_soft_placement=True)
-        sess = tf.compat.v1.Session(graph=graph, config=session_config)
+                logging.info(f"Processing... {page_path}")
+                # Skip files where json is missing (e.g. when there are less than 2 text regions)
+                if not os.path.isfile(json_path):
+                    logging.warning(f"No json file found to given pageXML {page_path}. Skipping.")
+                    continue
 
-        with sess.graph.as_default() as graph:
-            # for i in [n.name for n in tf.get_default_graph().as_graph_def().node if "graph" not in n.name]:
-            #     logging.debug(i)
+                # get one batch (input_dict, target_dict) from generator
+                batch = sess.run([next_batch])[0]
+                batch_counter += 1
 
-            with tf.Graph().as_default():  # write dummy placeholder in another graph
-                placeholders = self._get_placeholder()
-                # Placeholders:
-                # 'num_nodes'             [batch_size]
-                # 'num_interacting_nodes' [batch_size]
-                # 'interacting_nodes'     [batch_size, max_num_interacting_nodes, 2]
-                # 'node_features'         [batch_size, max_num_nodes, node_feature_dim]
-                # 'edge_features'         [batch_size, max_num_interacting_nodes, edge_feature_dim]
-                # 'image'                 [batch_size, pad_height, pad_width, channels]
-                # 'image_shape'           [batch_size, 3]
-                # 'visual_regions_nodes'  [batch_size, max_num_nodes, 2, max_num_points_visual_regions_nodes]
-                # 'num_points_visual_regions_nodes' [batch_size, max_num_nodes]
-                # 'visual_regions_edges'  [batch_size, max_num_nodes, 2, max_num_points_visual_regions_edges]
-                # 'num_points_visual_regions_edges' [batch_size, max_num_nodes]
-                # 'relations_to_consider_belong_to_same_instance' [batch_size, max_num_relations, num_relation_components]
+                # assign placeholder_dict to feed_dict
+                for key in placeholders:
+                    if type(placeholders[key]) == dict:
+                        for i in placeholders[key]:
+                            input_name = graph.get_tensor_by_name(placeholders[key][i].name)
+                            feed_dict[input_name] = batch[0][key][i]
+                    else:
+                        input_name = graph.get_tensor_by_name(placeholders[key].name)
+                        feed_dict[input_name] = batch[0][key]
 
-            self._dataset = self._input_fn.get_dataset()
-            self._dataset_iterator = tf.compat.v1.data.make_one_shot_iterator(self._dataset)
-            self._next_batch = self._dataset_iterator.get_next()
-            with open(self._flags.eval_list, 'r') as eval_list_file:
-                self._json_paths = [line.rstrip() for line in eval_list_file.readlines()]
-                if not self._flags.create_data_from_pagexml:
-                    self._page_paths = [get_page_from_json_path(json_path) for json_path in self._json_paths]
+                # run model with feed_dict
+                output = sess.run(output_node, feed_dict=feed_dict)
 
-            output_node = graph.get_tensor_by_name("output_belong_to_same_instance:0")
-            target_key = "relations_to_consider_gt"
-            targets = []  # gather targets for precision/recall evaluation
-            probs = []  # gather probabilities for precision/recall evaluation
-            feed_dict = {}
+                # evaluate the output
+                class_probabilities = output[0, :, 1]
 
-            batch_counter = 0
-            start_timer = time.time()
-            while True:  # Loop until dataset is empty
-                if self._flags.batch_limiter != -1 and self._flags.batch_limiter <= batch_counter:
-                    logging.info(f"stop validation after {batch_counter} batches with "
-                                 f"{self._flags.batch_size} samples each.")
-                    break
-                try:
-                    page_path = self._page_paths.pop(0)
-                    json_path = self._json_paths.pop(0)
+                if 'node_features' in placeholders:
+                    node_features_node = graph.get_tensor_by_name('node_features:0')
+                    node_features = feed_dict[node_features_node][0]  # assume batch_size = 1
 
-                    logging.info(f"Processing... {page_path}")
-                    # Skip files where json is missing (e.g. when there are less than 2 text regions)
-                    if not os.path.isfile(json_path):
-                        logging.warning(f"No json file found to given pageXML {page_path}. Skipping.")
-                        continue
+                # clustering of confidence graph
+                confidences = np.reshape(class_probabilities, [node_features.shape[0], -1])
+                # Manually set confidences of edges over horizontal separators and headings to zero
+                if FLAGS.mask_heading_separated_confs or FLAGS.mask_horizontally_separated_confs:
+                    confidences = mask_horizontally_separated_confs(confidences, page_path)
 
-                    # get one batch (input_dict, target_dict) from generator
-                    next_batch = sess.run([self._next_batch])[0]
-                    batch_counter += 1
-                    target = next_batch[1][target_key]
-                    targets.append(target)
-                    # num_relations_to_consider = next_batch[0]["num_relations_to_consider_belong_to_same_instance"]
-
-                    # assign placeholder_dict to feed_dict
-                    for key in placeholders:
-                        if type(placeholders[key]) == dict:
-                            for i in placeholders[key]:
-                                input_name = graph.get_tensor_by_name(placeholders[key][i].name)
-                                feed_dict[input_name] = next_batch[0][key][i]
-                        else:
-                            input_name = graph.get_tensor_by_name(placeholders[key].name)
-                            feed_dict[input_name] = next_batch[0][key]
-
-                    # run model with feed_dict
-                    output = sess.run(output_node, feed_dict=feed_dict)
-
-                    # evaluate the output
-                    class_probabilities = output[0, :, 1]
-                    probs.append(class_probabilities)
-
-                    # TODO: manually set class_probabilities of edges over horizontal separators to zero?!
-
-                    if 'node_features' in placeholders:
-                        node_features_node = graph.get_tensor_by_name('node_features:0')
-                        node_features = feed_dict[node_features_node][0]  # assume batch_size = 1
-                    if 'edge_features' in placeholders:
-                        edge_features_node = graph.get_tensor_by_name('edge_features:0')
-                        edge_features = feed_dict[edge_features_node][0]  # assume batch_size = 1
-
-                    # clustering of confidence graph
-                    confidences = np.reshape(class_probabilities, [node_features.shape[0], -1])
-
-                    if self._flags.only_save_conf:
-                        # save confidences
-                        save_conf_to_json(confidences=confidences,
-                                          page_path=page_path,
-                                          save_dir=self._flags.out_dir)
+                if FLAGS.save_conf != 'no_conf':
+                    # save confidences
+                    save_conf_to_json(confidences=confidences,
+                                      page_path=page_path,
+                                      save_dir=FLAGS.out_dir)
+                    if FLAGS.save_conf == 'only_conf':
                         # skip clustering
                         continue
 
-                    self._tb_clustering.set_confs(confidences)
-                    self._tb_clustering.calc(method=self._flags.clustering_method)
+                tb_clustering.set_confs(confidences)
+                tb_clustering.calc(method=FLAGS.clustering_method)
 
-                    # save pageXMLs with new clusterings
-                    cluster_path = save_clustering_to_page(clustering=self._tb_clustering.tb_labels,
-                                                           page_path=page_path,
-                                                           save_dir=self._flags.out_dir,
-                                                           info=self._tb_clustering.get_info(self._flags.clustering_method))
-                    # info = self._tb_clustering.get_info(self._flags.clustering_method)
-                    # save_name = re.sub(r'\.xml$', '_clustering.xml', os.path.basename(os.path.relpath(page_path)))
-                    # page_dir = re.sub(r'page$', 'clustering', os.path.dirname(os.path.relpath(page_path)))
-                    # save_dir = self._flags.out_dir
-                    # if info:
-                    #     save_dir = os.path.join(save_dir, page_dir, info)
-                    # else:
-                    #     save_dir = os.path.join(save_dir, page_dir)
-                    # cluster_path = os.path.join(save_dir, save_name)
-
-                    # debug output
-                    # TODO: add more debug images for (corrects/falses/targets/predictions etc.)
-                    if self._flags.debug_dir:
-                        if not os.path.isdir(self._flags.debug_dir):
-                            os.makedirs(self._flags.debug_dir)
-
-                        relations_node = graph.get_tensor_by_name('relations_to_consider_belong_to_same_instance:0')
-                        relations = feed_dict[relations_node][0]  # assume batch_size = 1
-
-                        # if 'edge_features' in placeholders:
-                        #     feature_dicts = [{'separated': bool(e)} for e in edge_features[:, :1].flatten()]
-                        #     graph_full = build_weighted_relation_graph(relations.tolist(),
-                        #                                                class_probabilities.tolist(),
-                        #                                                feature_dicts)
-                        # else:
-                        nx_graph = build_thresholded_relation_graph(relations, class_probabilities,
-                                                                    self._tb_clustering.clustering_params["confidence_threshold"])
-
-                        # # full confidence graph
-                        # edge_colors = []
-                        # for u, v, d in graph_full.edges(data='weight'):
-                        #     edge_colors.append(d)
-                        # plot_graph_and_page(page_path=page_path,
-                        #                     graph=graph_full,
-                        #                     node_features=node_features,
-                        #                     save_dir=self._flags.debug_dir,
-                        #                     with_edges=True,
-                        #                     with_labels=True,
-                        #                     desc='confidences',
-                        #                     edge_color=edge_colors,
-                        #                     edge_cmap=plt.get_cmap('jet'),
-                        #                     edge_vmin=0.0,
-                        #                     edge_vmax=1.0)
-                        # # confidence histogram
-                        # plot_confidence_histogram(class_probabilities, 10, page_path, self._flags.debug_dir,
-                        #                           desc='conf_hist')
-
-                        # clustered graph
-                        edge_colors = []
-                        for u, v, d in nx_graph.edges(data='weight'):
-                            edge_colors.append(d)
-                        plot_graph_clustering_and_page(graph=nx_graph,
-                                                       node_features=node_features,
+                # save pageXMLs with new clusterings
+                cluster_path = save_clustering_to_page(clustering=tb_clustering.tb_labels,
                                                        page_path=page_path,
-                                                       cluster_path=cluster_path,
-                                                       save_dir=self._flags.debug_dir,
-                                                       threshold=self._tb_clustering.clustering_params["confidence_threshold"],
-                                                       info=self._tb_clustering.get_info(self._flags.clustering_method),
-                                                       with_edges=True,
-                                                       with_labels=True,
-                                                       edge_color=edge_colors,
-                                                       edge_cmap=plt.get_cmap('jet'))
+                                                       save_dir=FLAGS.out_dir,
+                                                       info=tb_clustering.get_info(FLAGS.clustering_method))
 
-                # break as soon as dataset is empty
-                # (IndexError for empty page_paths list, OutOfRangeError for empty tf dataset)
-                except (tf.errors.OutOfRangeError, IndexError):
-                    break
-
-            # # Compute Precision, Recall, F1
-            # full_targets = np.squeeze(np.concatenate(targets, axis=-1))
-            # full_probs = np.squeeze(np.concatenate(probs, axis=-1))
-            # prec, rec, thresholds = precision_recall_curve(full_targets, full_probs)
-            # f_score = (2 * prec * rec) / (prec + rec)  # element-wise (broadcast)
-            #
-            # # P, R, F at relative thresholds
-            # print("\n Relative Thresholds:")
-            # print(f" |{'Threshold':>10}{'Precision':>12}{'Recall':>12}{'F1-Score':>12}")
-            # print(" | " + "-" * 45)
-            # for j in range(self._flags.num_p_r_thresholds + 1):
-            #     i = j * ((len(thresholds) - 1) // self._flags.num_p_r_thresholds)
-            #     print(f" |{thresholds[i]:10f}{prec[i]:12f}{rec[i]:12f}{f_score[i]:12f}")
-            #
-            # # P, R, F at fixed thresholds
-            # print("\n Fixed Thresholds:")
-            # print(f" |{'Threshold':>10}{'Precision':>12}{'Recall':>12}{'F1-Score':>12}")
-            # print(" | " + "-" * 45)
-            # step = 1 / self._flags.num_p_r_thresholds
-            # j = 0
-            # for i in range(len(thresholds)):
-            #     if thresholds[i] >= j * step:
-            #         print(f" |{thresholds[i]:10f}{prec[i]:12f}{rec[i]:12f}{f_score[i]:12f}")
-            #         j += 1
-            #         if j * step >= 1.0:
-            #             break
-            #
-            # # Best F1-Score
-            # i_f = np.argmax(f_score)
-            # print("\n Best F1-Score:")
-            # print(f" |{'Threshold':>10}{'Precision':>12}{'Recall':>12}{'F1-Score':>12}")
-            # print(" | " + "-" * 45)
-            # print(f" |{thresholds[i_f]:10f}{prec[i_f]:12f}{rec[i_f]:12f}{f_score[i_f]:12f}")
-
-            logging.info("Time: {:.2f} seconds for {} files ({} sec/page)".format(
-                time.time() - start_timer, batch_counter, (time.time() - start_timer) / batch_counter))
+            # break as soon as dataset is empty
+            # (IndexError for empty page_paths list, OutOfRangeError for empty tf dataset)
+            except (tf.errors.OutOfRangeError, IndexError):
+                break
+        logging.info(f"Time: {time.time() - start_timer:.2f} seconds")
         logging.info("Evaluation finished.")
 
 
 if __name__ == "__main__":
     logging.getLogger().setLevel('INFO')
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.INFO)
-    eval_rel = EvaluateRelation()
-    eval_rel.evaluate()
+
+    flags.print_flags()
+    # dummy InputFn to print flags
+    dummy = InputGNN(FLAGS)
+    dummy.print_params()
+    # dummy TextblockClustering to print flags
+    dummy = TextblockClustering(FLAGS)
+    dummy.print_params()
+
+    # load jsons
+    jsons = [line.rstrip() for line in open(FLAGS.eval_list, "r")]
+    n = FLAGS.num_workers
+
+    # parallel over n workers (regarding the input list)
+    if n > 1:
+        processes = []
+        for index, sublist in enumerate(split_list(jsons, n)):
+            # start worker
+            p = mp.Process(target=gnn_clustering, args=(sublist,))
+            p.start()
+            logging.info(f"Started worker {index}")
+            processes.append(p)
+        for p in processes:
+            p.join()
+        logging.info("All workers done.")
+    # single threaded
+    else:
+        gnn_clustering(jsons)

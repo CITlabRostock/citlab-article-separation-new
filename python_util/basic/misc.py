@@ -1,6 +1,12 @@
 import numpy as np
 
 
+def split_list(list_to_split, n):
+    """Splits a list into `n` chunks"""
+    length, remains = divmod(len(list_to_split), n)
+    return [list_to_split[i * length + min(i, remains):(i + 1) * length + min(i + 1, remains)] for i in range(n)]
+
+
 def create_sequence_mask(lengths, maxlen=None, dtype=np.bool):
     """ Returns a mask array representing the first N positions of each cell. This function is a numpy
     equivalent to the TensorFlow function tf.sequence_mask(...)

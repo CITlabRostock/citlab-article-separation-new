@@ -1,7 +1,7 @@
 import logging
 import tensorflow as tf
 from tensorboard.plugins.pr_curve.summary import _create_tensor_summary
-from gnn.model.graph_util import layers
+from article_separation.gnn.model.graph_util import layers
 
 
 def check_and_correct_interacting_nodes(interacting_nodes,

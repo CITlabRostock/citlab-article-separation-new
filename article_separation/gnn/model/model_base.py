@@ -3,9 +3,9 @@ import datetime
 import logging
 import os
 import tensorflow as tf
-import gnn.model.graph_util.optimizer as optimizers
-import utils.flags as flags
-from utils.io_utils import get_export_list
+import article_separation.gnn.model.graph_util.optimizer as optimizers
+import python_util.basic.flags as flags
+from article_separation.gnn.io import get_export_list
 
 
 class GraphBase(object):

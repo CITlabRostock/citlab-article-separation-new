@@ -1,13 +1,13 @@
 import logging
 import tensorflow as tf
-from gnn.model.model_base import GraphBase
-from gnn.model.graph.graph_gnn import GraphGNN
-from gnn.model.graph_util.layers import mlp
-from gnn.model.graph_util.misc import normalize_visual_regions, normalize_image, assign_visual_edge_features, \
+from article_separation.gnn.model.model_base import GraphBase
+from article_separation.gnn.model.graph.graph_gnn import GraphGNN
+from article_separation.gnn.model.graph_util.layers import mlp
+from article_separation.gnn.model.graph_util.misc import normalize_visual_regions, normalize_image, assign_visual_edge_features, \
     assign_visual_node_features, drop_edge, combined_static_and_dynamic_shape
-from backbones.backbones import Backbones
-from gnn.model.graph_util import feature_map_generators
-from utils.flags import update_params
+from article_separation.backbones.backbones import Backbones
+from article_separation.gnn.model.graph_util import feature_map_generators
+from python_util.basic.flags import update_params
 
 
 class GraphRelation(GraphBase):

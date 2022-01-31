@@ -24,6 +24,23 @@ def load_graph(pb_path):
     return graph
 
 
+def get_export_list(enforced_part_of_name, train_collection):
+    global_vars = tf.compat.v1.global_variables()
+    to_export = []
+    exclude = ["applyGradients", "backupVariables"]
+    for v in global_vars:
+        if all([excl not in v.name for excl in exclude]):
+            # Just regard variables containing a given keyword
+            if len(enforced_part_of_name) != 0 and v.name in train_collection:
+                for part in enforced_part_of_name:
+                    if part in v.name:
+                        to_export.append(v)
+                        continue
+            else:
+                to_export.append(v)
+    return to_export
+
+
 def save_conf_to_json(confidences, page_path, save_dir, symmetry_fn=gmean):
     """
     Saves graph confidences to a json file.

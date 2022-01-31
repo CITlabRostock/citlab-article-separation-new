@@ -1,8 +1,8 @@
 import logging
 import tensorflow as tf
-from gnn.model.model_base import GraphBase
-from gnn.model.graph_util import layers
-from utils.flags import update_params
+from article_separation.gnn.model.model_base import GraphBase
+from article_separation.gnn.model.graph_util import layers
+from python_util.basic.flags import update_params
 
 
 class MessageFnChunk(GraphBase):

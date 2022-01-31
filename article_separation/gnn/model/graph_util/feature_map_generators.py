@@ -26,7 +26,7 @@ of final feature maps.
 from __future__ import absolute_import, division, print_function, unicode_literals
 import collections
 import tensorflow as tf
-from gnn.model.graph_util import layers
+from article_separation.gnn.model.graph_util import layers
 
 
 def fixed_padding(inputs, kernel_size, rate=1):

@@ -1,11 +1,11 @@
 import logging
 import tensorflow as tf
-from gnn.model.model_base import GraphBase
-from gnn.model.graph.message_fn_chunk import MessageFnChunk
-from gnn.model.graph.update_fn_lstm import UpdateFnLSTM
-from gnn.model.graph_util.misc import check_and_correct_interacting_nodes
-from gnn.model.graph_util import layers
-from utils.flags import update_params
+from article_separation.gnn.model.model_base import GraphBase
+from article_separation.gnn.model.graph.message_fn_chunk import MessageFnChunk
+from article_separation.gnn.model.graph.update_fn_lstm import UpdateFnLSTM
+from article_separation.gnn.model.graph_util.misc import check_and_correct_interacting_nodes
+from article_separation.gnn.model.graph_util import layers
+from python_util.basic.flags import update_params
 
 
 class GraphGNN(GraphBase):

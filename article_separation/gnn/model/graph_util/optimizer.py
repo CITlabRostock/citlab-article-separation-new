@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
-from utils.flags import update_params
+from python_util.basic.flags import update_params
 
 
 class DecayOptimizer(object):

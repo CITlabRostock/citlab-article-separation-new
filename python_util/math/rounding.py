@@ -1,4 +1,20 @@
 import numpy as np
+import tensorflow as tf
+
+
+def safe_div(numerator, denominator, name):
+    """
+    Divides two tensors element-wise, returning 0 if the denominator is <= 0.
+    :param numerator: A real `Tensor`
+    :param denominator: A real `Tensor`, with dtype matching `numerator`
+    :param name: Name for the returned op
+    :return: 0 if `denominator` <= 0, else `numerator` / `denominator`
+    """
+    t = tf.truediv(numerator, denominator)
+    zero = tf.zeros_like(t, dtype=denominator.dtype)
+    condition = tf.greater(denominator, zero)
+    zero = tf.cast(zero, t.dtype)
+    return tf.where(condition, t, zero, name=name)
 
 
 def round_to_nearest_integer(x):

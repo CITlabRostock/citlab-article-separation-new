@@ -1,10 +1,10 @@
-import numpy as np
 import tensorflow as tf
-from utils.math_utils import f1_score, safe_div
-from gnn.model.model_base import ModelBase
-from gnn.model.graph.graph_relation import GraphRelation
-from gnn.model.graph_util import layers
-from gnn.model.graph_util.misc import curve_streaming_op
+from python_util.math.measure import f1_score
+from python_util.math.rounding import safe_div
+from article_separation.gnn.model.model_base import ModelBase
+from article_separation.gnn.model.graph.graph_relation import GraphRelation
+from article_separation.gnn.model.graph_util import layers
+from article_separation.gnn.model.graph_util.misc import curve_streaming_op
 
 
 class ModelRelation(ModelBase):

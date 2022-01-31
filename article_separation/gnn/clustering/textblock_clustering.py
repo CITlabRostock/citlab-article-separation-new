@@ -3,12 +3,12 @@ import numpy as np
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.cluster import dbscan
 from scipy.stats import gmean
-from article_separation.gnn.clustering.dbscan_textblocks import DBScanRelation
+from gnn.clustering.dbscan import DBScanRelation
 
 
 class TextblockClustering(object):
     """
-    class for textblock clustering
+    Class for textblock clustering.
 
     Usage::
 
@@ -23,12 +23,6 @@ class TextblockClustering(object):
     """
 
     def __init__(self, flags):
-        """
-        standard constructor
-
-        Args:
-            flags:  path to flags object containing all params
-        """
         self.clustering_params = dict()
         self._flags = flags
 
@@ -65,18 +59,28 @@ class TextblockClustering(object):
         self._conf_mat = None
         self._mat_dim = None
         self._dist_mat = None
-        self._cond_dist_list = None
+        self._cond_dists = None
         self._delta_mat = None
         self._dbscanner = None
 
+    #     # Debug
+    #     self._page_path = None
+    #     self._save_dir = None
+    #     self._debug = False
+    #
+    # def set_debug(self, page_path, save_dir):
+    #     self._page_path = page_path
+    #     self._save_dir = save_dir
+    #     self._debug = True
+
     def print_params(self):
-        print("##### {}:".format("CLUSTERING"))
+        logging.info("CLUSTERING:")
         sorted_dict = sorted(self.clustering_params.items(), key=lambda kv: kv[0])
         for a in sorted_dict:
-            print("  {}: {}".format(a[0], a[1]))
+            logging.info(f"  {a[0]}: {a[1]}")
 
     def get_info(self, method):
-        """returns an info string with the most important paramters of the given method"""
+        """Returns an info string with the most important paramters of the given method"""
         info_string = None
         if getattr(self, f'_{method}', None):
             if method == 'dbscan':
@@ -94,36 +98,32 @@ class TextblockClustering(object):
 
     def set_confs(self, confs, symmetry_fn=gmean):
         """
-        sets confidence values and symmetrization function
+        Sets confidence values and symmetrization function.
 
-        Args:
-            confs (list of list of floats): confidence values from (0,1)
-            symmetry_fn (numpy-like matrix function): unction to make confidences symmetric
+        Note that since the `symmetry_fn` will be applied to confidences, the geometric mean is preferred over
+        the arithmetic mean. But suitable is any function element-wise applicable to 2D-arrays.
 
-        Note:
-            symmetry_fn will be applied to confidences, hence geometric is preferred over arithmetic mean.
-            But suitable is any (numpy or scipy) function element-wisely applicable to 2D-arrays (e.g. numpy.max/min).
+        :param confs: confidence array with values from (0,1)
+        :param symmetry_fn: array-like function to make confidences symmetric
+        :return: None
         """
         self._conf_mat = np.array(confs)
         self._mat_dim = self._conf_mat.shape[0]
-        # make confidence matrix symmetric (if not already is)
-        if symmetry_fn:
-            self._make_symmetric(symmetry_fn)
         # Substitute confidences of 0.0 and 1.0 with next bigger/smaller float (to prevent zero divides)
         self._smooth_confs()
+        # Make confidence matrix symmetric (if not already is)
+        if symmetry_fn:
+            self._make_symmetric(symmetry_fn)
+        # Convert to (pseudo) distances
         self._dist_mat = -np.log(self._conf_mat)
-        #   linkage
-        self._cond_dist_list = []
-        for i in range(self._mat_dim):
-            for j in range(i + 1, self._mat_dim):
-                self._cond_dist_list.append(self._dist_mat[i, j])
-        logging.debug(f'… generated condensed list of length {len(self._cond_dist_list)}')
+        # Distances for same elements should be 0
+        np.fill_diagonal(self._dist_mat, 0.0)
+        #   linkage (condensed distance array)
+        cond_indices = np.triu_indices_from(self._dist_mat, k=1)
+        self._cond_dists = self._dist_mat[cond_indices]
         #   greedy
         self._delta_mat = np.array(list(map(lambda p: np.log(p / (1 - p)), self._conf_mat)))
-        #   Hauptdiagonalen
-        for i in range(self._mat_dim):
-            self._conf_mat[i, i] = 0.0
-            self._delta_mat[i, i] = -np.math.inf
+        np.fill_diagonal(self._delta_mat, -np.math.inf)
 
     def _make_symmetric(self, symmetry_fn):
         mat = self._conf_mat
@@ -140,22 +140,28 @@ class TextblockClustering(object):
 
     def calc(self, method):
         """
-        run calculation of clusters
+        Run calculation of clusters.
 
-        Args:
-            method (str): method name
+        Currently implemented methods: 'dbscan', 'linkage', 'greedy', 'dbscan_std'
 
-        Note:
-            currently implemented methods: 'dbscan', 'linkage', 'greedy', 'dbscan_std'
+        :param method: method name (str)
+        :return: None
         """
         self.tb_labels = None
         self.tb_classes = None
-        if getattr(self, f'_{method}', None):
-            fctn = getattr(self, f'_{method}', None)
-            logging.info(f'performing clustering with method "{method}"')
-            fctn()
-        else:
-            raise NotImplementedError(f'cannot find clustering method "_{method}"!')
+
+        if self._mat_dim == 2:  # we have exactly two text regions
+            logging.info(f'No clustering performed for two text regions. Decision based on confidence '
+                         f'threshold ({self._conf_mat[0, 1]} >= {self.clustering_params["confidence_threshold"]}).')
+            self.tb_labels = [1, 1] if self._conf_mat[0, 1] >= self.clustering_params["confidence_threshold"] else [1,
+                                                                                                                    2]
+        else:  # atleast three text regions
+            if getattr(self, f'_{method}', None):
+                fctn = getattr(self, f'_{method}', None)
+                logging.info(f'performing clustering with method "{method}"')
+                fctn()
+            else:
+                raise NotImplementedError(f'cannot find clustering method "_{method}"!')
         self._calc_relative_LLH()
 
     def _labels2classes(self):
@@ -234,7 +240,7 @@ class TextblockClustering(object):
             self._calcMat[cls1, idx] = self._calcMat[idx, cls1]
 
     def _linkage(self):
-        linkage_res = linkage(np.array(self._cond_dist_list, dtype=float), method=self.clustering_params["method"])
+        linkage_res = linkage(self._cond_dists, method=self.clustering_params["method"])
 
         t = self.clustering_params["t"]
         if t < 0:
@@ -250,10 +256,11 @@ class TextblockClustering(object):
 
     def _dbscan(self):
         if not self._dbscanner:
-            self._dbscanner = DBScanRelation(min_neighbors_for_cluster=self.clustering_params["min_neighbors_for_cluster"],
-                                             confidence_threshold=self.clustering_params["confidence_threshold"],
-                                             cluster_agreement_threshold=self.clustering_params["cluster_agreement_threshold"],
-                                             assign_noise_clusters=self.clustering_params["assign_noise_clusters"])
+            self._dbscanner = DBScanRelation(
+                min_neighbors_for_cluster=self.clustering_params["min_neighbors_for_cluster"],
+                confidence_threshold=self.clustering_params["confidence_threshold"],
+                cluster_agreement_threshold=self.clustering_params["cluster_agreement_threshold"],
+                assign_noise_clusters=self.clustering_params["assign_noise_clusters"])
 
         self.tb_labels = self._dbscanner.cluster_relations(self._mat_dim, self._conf_mat)
         self._labels2classes()

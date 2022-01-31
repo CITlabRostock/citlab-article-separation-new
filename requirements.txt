@@ -15,3 +15,4 @@ cssutils>=1.0.2
 lxml>=4.3.3
 tqdm>=4.60.0
 scikit-learn>=0.24.1
+openpyxl~=3.0.9

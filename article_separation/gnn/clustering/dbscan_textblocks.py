@@ -1,7 +1,5 @@
 import numpy as np
-import argparse
-import json
-import re
+import logging
 
 
 class DBScanRelation:
@@ -48,9 +46,9 @@ class DBScanRelation:
             elif self.weight_handling == 'min':
                 self.confidences = np.stack([self.confidences, np.transpose(self.confidences)], axis=-1)
                 self.confidences = np.min(self.confidences, axis=-1)
-            print(f"Confidence matrix is forced to be symmetric, by taking '{self.weight_handling}' of pairs.")
-            print("Average symmetry deviation: ", np.mean(np.abs(np.around(cc - self.confidences, decimals=4))))
-            print("Maximum symmetry deviation: ", np.max(np.abs(np.around(cc - self.confidences, decimals=4))))
+            logging.info(f"Confidence matrix is forced to be symmetric, by taking '{self.weight_handling}' of pairs.")
+            logging.info("Average symmetry deviation: ", np.mean(np.abs(np.around(cc - self.confidences, decimals=4))))
+            logging.info("Maximum symmetry deviation: ", np.max(np.abs(np.around(cc - self.confidences, decimals=4))))
 
         # This list holds the cluster assignment for each node in the graph
         #    -1 -> Indicates a noise node
@@ -142,6 +140,10 @@ class DBScanRelation:
         return neighbors
 
     def validate_cluster_agreement(self, node, label):
+        """
+        Computes average confidence over `node` and all other nodes matching the given `label`. It then
+        returns whether or not this confidence passes the set `cluster_agreement_threshold`.
+        """
         cluster_indices = [l == label for l in self.labels]  # node indices with matching label
         cluster_confidences = self.confidences[node, cluster_indices]  # confidences between node and cluster_nodes
         cluster_agreement = np.mean(cluster_confidences)  # average confidence

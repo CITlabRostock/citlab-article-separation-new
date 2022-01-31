@@ -4,10 +4,10 @@ import warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # set tf log_level to warning(2), default: info(1)
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 import tensorflow as tf
-import utils.flags as flags
-from gnn.trainer.trainer_base import TrainerBase
-from gnn.input.input_dataset import InputGNN
-from gnn.model.model_relation import ModelRelation
+import python_util.basic.flags as flags
+from article_separation.gnn.trainer.trainer_base import TrainerBase
+from article_separation.gnn.input.input_dataset import InputGNN
+from article_separation.gnn.model.model_relation import ModelRelation
 
 
 # Model parameter

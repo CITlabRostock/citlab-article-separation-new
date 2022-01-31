@@ -3,10 +3,10 @@ import os
 import glob
 import time
 import tensorflow as tf
-import utils.flags as flags
-from utils.early_stopping import stop_if_no_metric_improvement
-from utils.io_utils import copy_model
-from utils.warmstart import WarmStarter
+import python_util.basic.flags as flags
+from article_separation.gnn.io import copy_model
+from article_separation.util.early_stopping import stop_if_no_metric_improvement
+from article_separation.util.warmstart import WarmStarter
 
 
 # How to train

@@ -3,6 +3,7 @@ import os
 import json
 import logging
 import re
+import shutil
 import tensorflow as tf
 from scipy.stats import gmean
 from python_util.parser.xml.page.page import Page
@@ -39,6 +40,30 @@ def get_export_list(enforced_part_of_name, train_collection):
             else:
                 to_export.append(v)
     return to_export
+
+
+def copy_model(dir_src, dir_dest):
+    """Copies a TensorFlow model from `dir_src` to `dir_dest`."""
+    logging.info(f"Copying model from '{dir_src}' to '{dir_dest}'.")
+    with open(os.path.join(dir_src, "checkpoint"), "r") as file_checkpoint:
+        first_line = file_checkpoint.readlines()[0]
+        name = re.search('"(.*)"', first_line, re.IGNORECASE).group(1)
+        logging.debug(f"Checkpoint name = {name}")
+        if os.path.exists(dir_dest):
+            logging.debug("Destination folder found.")
+            for f in os.listdir(dir_dest):
+                logging.debug(f"Try to delete {f} in folder {dir_dest}")
+                os.remove(os.path.join(dir_dest, f))
+        else:
+            os.mkdir(dir_dest)
+        files = os.listdir(dir_src)
+        logging.debug(f"Source files are {files}")
+        for file in files:
+            if file.startswith(name):
+                logging.debug(f"Copy {os.path.join(dir_src, file)} to {os.path.join(dir_dest, file)}")
+                shutil.copyfile(os.path.join(dir_src, file), os.path.join(dir_dest, file))
+        with open(os.path.join(dir_dest, "checkpoint"), "w+") as file_checkpoint_best:
+            file_checkpoint_best.write(f'model_checkpoint_path: "{name}"\nall_model_checkpoint_paths: "{name}"\n')
 
 
 def save_conf_to_json(confidences, page_path, save_dir, symmetry_fn=gmean):

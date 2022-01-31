@@ -7,10 +7,11 @@ from sklearn.metrics import precision_recall_curve, roc_auc_score, accuracy_scor
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # set tf log_level to warning(2), default: info(1)
 os.environ['TF_CUDNN_USE_AUTOTUNE'] = '0'  # no tune necessary, short running time
 import tensorflow as tf
-import utils.flags as flags
-from gnn.input.input_dataset import InputGNN
-import gnn.model.model_relation as models
-from utils.io_utils import get_path_from_exportdir, load_graph
+import python_util.basic.flags as flags
+from article_separation.gnn.input.input_dataset import InputGNN
+import article_separation.gnn.model.model_relation as models
+from article_separation.gnn.io import load_graph
+from python_util.io.path_util import get_path_from_exportdir
 
 # General
 # =======

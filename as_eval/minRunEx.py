@@ -10,28 +10,27 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='\t%(levelname)s\t%(module)s\n%(message)s')
 
     #   set up paths
-    # workDirPath = Path("../work-2")
-    workDirPath = Path("P:/Daten/NewsEye/AS_QC/Koelnische_Zeitung_112")
+    workDirPath = Path("../work")
     gtDirPath = workDirPath / "page"
     hypDirPath = workDirPath / "clustering"
     xlsxFilePath = (workDirPath / "minRunEx").with_suffix('.xlsx')
     jsonFilePath = (workDirPath / "minRunEx").with_suffix('.json')
     statFilePath = (workDirPath / "minRunEx").with_suffix('.txt')
 
-    #   initialize article seoparation checking
-    probSet = {aqt.AsProbCode.TL_11, aqt.AsProbCode.TL_12, aqt.AsProbCode.TR_11, aqt.AsProbCode.TL_21}
-    asChecker = aqt.AsChecker(probSet)
-    asChecker.pageList = list(gtDirPath.glob('*.xml'))
-    # for methodDirPath in hypDirPath.iterdir():
-    #     asChecker.pageList.extend(list(methodDirPath.glob('*.xml')))
-    asChecker.checkPages()
-    with jsonFilePath.open(mode='wt') as jsonFile:
-        print(asChecker.probToJSON(), file=jsonFile)
-    with statFilePath.open(mode='wt') as statFile:
-        print(asChecker.cntDict, file=statFile)
-        print(f'\n{aqt.AsProbDesc().toString()}', file=statFile)
-    logging.info(f'{asChecker.cntProbs} problems detected')
-    sys.exit()
+    # #   initialize article separation checking
+    # probSet = {aqt.AsProbCode.TL_11, aqt.AsProbCode.TL_12, aqt.AsProbCode.TR_11, aqt.AsProbCode.TL_21}
+    # asChecker = aqt.AsChecker(probSet)
+    # asChecker.pageList = list(gtDirPath.glob('*.xml'))
+    # # for methodDirPath in hypDirPath.iterdir():
+    # #     asChecker.pageList.extend(list(methodDirPath.glob('*.xml')))
+    # asChecker.checkPages()
+    # with jsonFilePath.open(mode='wt') as jsonFile:
+    #     print(asChecker.probToJSON(), file=jsonFile)
+    # with statFilePath.open(mode='wt') as statFile:
+    #     print(asChecker.cntDict, file=statFile)
+    #     print(f'\n{aqt.AsProbDesc().toString()}', file=statFile)
+    # logging.info(f'{asChecker.cntProbs} problems detected')
+    # # sys.exit()
 
     #   initialize comparison engine & result container
     asComper = aqt.SepPageBlComper()

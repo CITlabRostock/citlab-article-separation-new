@@ -1,6 +1,4 @@
 # Article Separation
-!!!THIS README FILE IS WIP!!!
-
 > Python modules for different tasks:
 > - separating articles in (historical) newspapers or similar documents (`article_separation`)
 > - measuring the performance of article separation algorithms (`article_separation_measure` and `as_eval`)

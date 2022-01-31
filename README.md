@@ -70,7 +70,7 @@ public deliverables is given [here](https://cordis.europa.eu/project/id/770299/r
 
 #### Separator Detection
 This module is used to detect visible vertical and horizontal separators on a newspaper page. To use it a TensorFlow 
-model is needed that was trained on an image segmentation task. The underlying model we used is the so called 
+model is needed that was trained on an image segmentation task. An example network can be found in `nets/separator_detection_net.pb`. The underlying model we used is the so called 
 [ARU-Net](https://arxiv.org/abs/1802.03345) which is a U-Net extended by two key concepts, attention (A) and
 depth (residual structures (R)). To run the separator detection use the `run_net_post_processing.py` file like in the 
 following example.
@@ -94,7 +94,7 @@ python -u run_textregion_generation.py --path_to_xml_lst "/path/to/xml/list" --n
 ```
 #### Heading Detection
 The heading detection combines a distance transformation for detecting approximate text heights and stroke widths with 
-an image segmentation approach that detects headings in an image. The results of both approaches are combined in a 
+an image segmentation approach that detects headings in an image. An example network can be found in `nets/heading_detection_net.pb`. The results of both approaches are combined in a 
 weighted manner where most weight is put on the net output. To run the heading detection use the 
 `run_net_post_processing.py` file like in the following example.
 

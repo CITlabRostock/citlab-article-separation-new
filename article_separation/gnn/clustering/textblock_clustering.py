@@ -1,9 +1,11 @@
 import logging
 import numpy as np
-from scipy.cluster.hierarchy import linkage, fcluster
+import kneed
+from scipy.cluster.hierarchy import linkage, fcluster, cut_tree
 from sklearn.cluster import dbscan
 from scipy.stats import gmean
-from gnn.clustering.dbscan import DBScanRelation
+from sklearn.metrics import silhouette_score
+from article_separation.gnn.clustering.dbscan import DBScanRelation
 
 
 class TextblockClustering(object):
@@ -36,6 +38,7 @@ class TextblockClustering(object):
         self.clustering_params["method"] = "centroid"
         self.clustering_params["criterion"] = "distance"
         self.clustering_params["t"] = -1.0
+        self.clustering_params["max_clusters"] = 100
         # [greedy]
         self.clustering_params["max_iteration"] = 1000
         # [dbscan_std]
@@ -62,16 +65,6 @@ class TextblockClustering(object):
         self._cond_dists = None
         self._delta_mat = None
         self._dbscanner = None
-
-    #     # Debug
-    #     self._page_path = None
-    #     self._save_dir = None
-    #     self._debug = False
-    #
-    # def set_debug(self, page_path, save_dir):
-    #     self._page_path = page_path
-    #     self._save_dir = save_dir
-    #     self._debug = True
 
     def print_params(self):
         logging.info("CLUSTERING:")
@@ -152,16 +145,15 @@ class TextblockClustering(object):
 
         if self._mat_dim == 2:  # we have exactly two text regions
             logging.info(f'No clustering performed for two text regions. Decision based on confidence '
-                         f'threshold ({self._conf_mat[0, 1]} >= {self.clustering_params["confidence_threshold"]}).')
-            self.tb_labels = [1, 1] if self._conf_mat[0, 1] >= self.clustering_params["confidence_threshold"] else [1,
-                                                                                                                    2]
+                        f'threshold ({self._conf_mat[0, 1]} >= {self.clustering_params["confidence_threshold"]}).')
+            self.tb_labels = [1, 1] if self._conf_mat[0, 1] >= self.clustering_params["confidence_threshold"] else [1, 2]
         else:  # atleast three text regions
             if getattr(self, f'_{method}', None):
                 fctn = getattr(self, f'_{method}', None)
-                logging.info(f'performing clustering with method "{method}"')
+                logging.info(f'Performing clustering with method "{method}"')
                 fctn()
             else:
-                raise NotImplementedError(f'cannot find clustering method "_{method}"!')
+                raise NotImplementedError(f'Cannot find clustering method "_{method}"!')
         self._calc_relative_LLH()
 
     def _labels2classes(self):
@@ -241,18 +233,86 @@ class TextblockClustering(object):
 
     def _linkage(self):
         linkage_res = linkage(self._cond_dists, method=self.clustering_params["method"])
-
-        t = self.clustering_params["t"]
-        if t < 0:
+        if self.clustering_params["t"] == -1:
+            logging.info(f"linkage with distance thresholding.")
             hierarchical_distances = linkage_res[:, 2]
             distance_mean = float(np.mean(hierarchical_distances))
             distance_median = float(np.median(hierarchical_distances))
             t = 1 / 2 * (distance_mean + distance_median)
-
-        self.tb_labels = fcluster(linkage_res, t=t, criterion=self.clustering_params["criterion"])
+            self.tb_labels = fcluster(linkage_res, t=t, criterion=self.clustering_params["criterion"])
+        else:
+            num_clusters, labels = self._validate_clusters(linkage_res)
+            self.tb_labels = labels
         self._labels2classes()
         self.num_classes = len(self.tb_classes)
         self.num_noise = len([label for label in self.tb_labels if label == -1])
+
+    def _validate_clusters(self, linkage_res):
+        # Silhouette scores for possible clusterings
+        s_scores = []  # silhouette scores
+        max_clusters = min(self._mat_dim, self.clustering_params["max_clusters"])  # try at most N clusters
+        tree = cut_tree(linkage_res)  # all clusterings based on linkage result
+        tree = np.transpose(tree[:, ::-1])[:max_clusters, :]
+        labels_list = tree.tolist()
+        cluster_nums = list(range(1, len(labels_list) + 1))
+        for cluster_num, labels in zip(cluster_nums, labels_list):
+            if cluster_num == 1:  # return single cluster or skip
+                cond_indices = np.triu_indices_from(self._conf_mat, k=1)
+                cond_confs = self._conf_mat[cond_indices]  # upper triangular matrix
+                if np.all(cond_confs >= self.clustering_params["confidence_threshold"]):
+                    # all confidences above threshold
+                    return 1, labels_list[0]
+                else:
+                    # no validity indices for single cluster
+                    continue
+            try:
+                s = silhouette_score(self._dist_mat, labels, metric='precomputed')
+            except ValueError:  # not defined if num_labels == num_samples
+                s = 0.0
+            s_scores.append(s)
+
+        # Elbow method for cluster merge distances
+        cluster_by_elbow = dict()
+        last_merges = linkage_res[-int(max_clusters):, 2]
+        last_merges = np.concatenate(([0.0], last_merges), axis=-1)
+        idxs = np.arange(1, len(last_merges) + 1, dtype=np.int32)
+        cluster_num = self._elbow_method(idxs, last_merges[::-1], "merge_distance", "convex", "decreasing")
+        cluster_by_elbow["merge"] = cluster_num
+
+        # Best case based on validity index
+        max_silhouette_index = np.argmax(s_scores) + 2  # first silhouette score is at two clusters
+        logging.debug(f"Max silhouette score at {max_silhouette_index} clusters")
+        if self.clustering_params["t"] == "silhouette":
+            num_clusters = max_silhouette_index
+        else:
+            try:
+                num_clusters = cluster_by_elbow[self.clustering_params["t"]]
+            except KeyError:
+                logging.error(f'Clustering param t = {self.clustering_params["t"]} not in validity indices. '
+                              f'Defaulting to num_clusters = 1')
+                num_clusters = 1
+        num_clusters = num_clusters if num_clusters is not None else 1
+        return num_clusters, labels_list[num_clusters - 1]
+
+    def _elbow_method(self, x, y, name, curve, direction, online=True):
+        # see https://towardsdatascience.com/cheat-sheet-to-implementing-7-methods-for-selecting-optimal-number-of-clusters-in-python-898241e1d6ad
+        # see https://github.com/arvkevi/kneed for implementation
+        # for sensitivity in range(1, 0, -1):  # start conservative and work down
+        #     kneedle = kneed.KneeLocator(x, y, curve=curve, direction=direction, S=sensitivity, online=True)
+        #     elbow = kneedle.elbow
+        #     if elbow is not None:  # break if elbow was found
+        #         break
+        sens = 1.0
+        kneedle = kneed.KneeLocator(x, y, curve=curve, direction=direction, S=sens, online=online)
+        # kneedle = kneed.KneeLocator(x, y, curve=curve, direction=direction, S=sens, online=True,
+        #                             interp_method="polynomial", polynomial_degree=7)
+        # try:  # take second elbow if available
+        #     elbow = list(kneedle.all_elbows)[1]
+        # except IndexError:
+        #     elbow = kneedle.elbow
+        elbow = kneedle.elbow
+        logging.debug(f"{name} elbows (s = {sens}): {sorted(kneedle.all_elbows)}")
+        return elbow
 
     def _dbscan(self):
         if not self._dbscanner:

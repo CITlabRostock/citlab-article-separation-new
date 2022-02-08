@@ -141,13 +141,15 @@ class AsChecker:
         probList = []
         for textLine in self.actPage.get_textlines(ignore_redundant_textlines=True):
             if AsProbCode.TL_11 in self.actCodeSet:
-                logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TL_11)}')
+                probCode = AsProbCode.TL_11
+                logger.debug(f'checking: {self.probDesc.getWithDefault(probCode)}')
                 if len(textLine.text) == 0:
                     prob = AsProbDict(code=probCode, entity=textLine.id, remark='empty')
                     probList.append(prob)
                     self.cntDict[probCode.name] += 1
             if AsProbCode.TL_12 in self.actCodeSet:
-                logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TL_12)}')
+                probCode = AsProbCode.TL_12
+                logger.debug(f'checking: {self.probDesc.getWithDefault(probCode)}')
                 if textLine.get_article_id() is None:
                     prob = AsProbDict(code=probCode, entity=textLine.id, remark='w/o article')
                     probList.append(prob)
@@ -158,6 +160,7 @@ class AsChecker:
         """checks for problem: textlines without text or article_id"""
         probList = []
         if AsProbCode.TL_21 in self.actCodeSet:
+            probCode = AsProbCode.TL_21
             logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TL_21)}')
             textLineList = sorted(self.actPage.get_textlines(ignore_redundant_textlines=True), key=lambda x: x.id)
             for (idx, textLine1) in enumerate(textLineList):
@@ -173,6 +176,7 @@ class AsChecker:
         probList = []
         for textRegion in self.actPage.get_text_regions():
             if AsProbCode.TR_11 in self.actCodeSet:
+                probCode = AsProbCode.TR_11
                 logger.debug(f'checking: {self.probDesc.getWithDefault(AsProbCode.TR_11)}')
                 artIdSet = set()
                 for textLine in textRegion.text_lines:

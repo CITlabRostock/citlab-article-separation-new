@@ -3,8 +3,7 @@
 import logging
 import sys
 from pathlib import Path
-
-import asQcTools as aqt
+import as_eval.asQcTools as aqt
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='\t%(levelname)s\t%(module)s\n%(message)s')

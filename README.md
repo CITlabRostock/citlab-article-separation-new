@@ -190,7 +190,15 @@ This is another package for evaluating an AS as described in deliverable `D2.7 v
 - Simplification: For correct interpretation & labeling, a hypothesis' PAGE-XML parent directory's name must be the method's name.
   (cf. `SepPageCompDict.path2method`)
 
-####  Result interpretation
+
+####  Checking PAGE-XML
+- intitialize an `AsChecker` with problem type (enums) to be analyzed
+- provide the list of pages to be checked
+- run `AsChecker`'s `checkPages()` method
+- get results from `AsChecker`'s `probDict` or `cntDict` members
+- direct `JSON` output via `probToJSON` for convenience
+
+####  Comparison result interpretation
 
 ##### SepPageComparison container
 - container for counting results

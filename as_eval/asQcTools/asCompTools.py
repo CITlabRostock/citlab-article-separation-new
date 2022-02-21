@@ -325,11 +325,15 @@ class CompDictEvaler():
                             actCell.value = dataDict[method0][method1]
                             actCell.font = Font(color='666666')
                         else:
-                            ratio = dataDict[method0][method1] / dataDict[method1][method0]
-                            actCell.value = ratio
-                            actCell.number_format = '0.00'
-                            if ratio < 1.0:
-                                actCell.font = Font(color='880000')
+                            denom = dataDict[method1][method0]
+                            if denom > 0:
+                                ratio = dataDict[method0][method1] / denom
+                                actCell.value = ratio
+                                actCell.number_format = '0.00'
+                                if ratio < 1.0:
+                                    actCell.font = Font(color='880000')
+                                else:
+                                    actCell.font = Font(color='00DD00')
                             else:
                                 actCell.font = Font(color='00DD00')
 

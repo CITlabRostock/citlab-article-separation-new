@@ -97,8 +97,6 @@ if __name__ == '__main__':
                 logger.info(f'\t… with HYP in {hyp_file_path}:\t{compRes.__dict__}')
                 spcDict.addItem(dataSet='Koeln111_test', gtXML=str(gt_file_path), hypXML=str(hyp_file_path),
                                 spcDict=compRes)
-            for k in spcDict['Koeln111_test']:
-                print(f"{k} -> {spcDict['Koeln111_test'][k].keys()}")
 
     #   compare methods
     methEvaler = aqt.CompDictEvaler(spcDict=spcDict)

@@ -13,7 +13,8 @@ def find_dirs(name, root='.', exclude=None):
             # return os.path.join(path, name)
             results.append(os.path.join(path, name))
     if exclude:
-        results = [res for res in results if exclude not in res]
+        for ex in exclude.split(","):
+            results = [res for res in results if ex not in res]
     return results
 
 
@@ -33,8 +34,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--gt_list", type=str, help="list file containing GT file paths", default=None)
     parser.add_argument("--gt_dir", type=str, help="dir path containing GT files", default=None)
+    parser.add_argument("--exclude", type=str, help="comma separated strings to exclude from gt_dir", default=None)
     parser.add_argument("--work_dir", type=str, help="dir path containing clustering folders", required=True)
     parser.add_argument("--out_dir", type=str, help="dir path for the ouput files", required=True)
+    parser.add_argument("--name", type=str, help="optional name for output comparison file", default=None)
     args = parser.parse_args()
     logger = setup_logger()
 
@@ -48,15 +51,16 @@ if __name__ == '__main__':
     elif args.gt_list:
         gt_files = [path.rstrip() for path in open(args.gt_list, "r")]
     else:
-        logger.error(f"Either GT list or GT directory is needed!")
+        logger.error(f"Either --gt_list or --gt_dir is needed!")
         exit(1)
-    clustering_paths = find_dirs("clustering", root=args.work_dir, exclude="koeln111_bc")
+    clustering_paths = find_dirs("clustering", root=args.work_dir, exclude=args.exclude)
     logger.info(f"Using clustering paths:")
     for path in clustering_paths:
         logger.info(f"\t{path}")
 
     # OUT paths
-    xlsx_out_path = os.path.join(args.out_dir, "comparison.xlsx")
+    out_name = f"{args.name}_comparison" if args.name else "comparison"
+    xlsx_out_path = os.path.join(args.out_dir, f"{out_name}.xlsx")
     # json_out_path = os.path.join(args.out_dir, "problems", "out.json")
     # stat_out_path = os.path.join(args.out_dir, "problems", "out.txt")
     # prob_out_path = os.path.join(args.out_dir, "problems", "out.xlsx")
@@ -90,6 +94,9 @@ if __name__ == '__main__':
         asComper.loadGT(gt_file_path)
         for clustering_path in clustering_paths:
             method_folders = [os.path.join(clustering_path, folder) for folder in os.listdir(clustering_path)]
+            if args.exclude:
+                for ex in args.exclude.split(","):
+                    method_folders = [res for res in method_folders if ex not in res]
             for method_path in [folder for folder in method_folders if os.path.isdir(folder)]:
                 cluster_file_path = os.path.splitext(os.path.basename(gt_file_path))[0] + "_clustering.xml"
                 hyp_file_path = os.path.join(method_path, cluster_file_path)

@@ -154,7 +154,8 @@ class SepPageCompDict(dict):
     @classmethod
     def path2method(cls, path: str) -> str:
         """method extraction: last-but-one part of (file)path"""
-        return str(PurePath(path).parent.parts[-1])
+        # return str(PurePath(path).parent.parts[-1])
+        return str(PurePath(path).parent.parts[-5]) + "/" + str(PurePath(path).parent.parts[-1])
 
     def addItem(self, dataSet: str, gtXML: str, hypXML: str, spcDict: SepPageComparison) -> None:
         """add entry to collection"""

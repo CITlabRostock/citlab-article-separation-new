@@ -111,9 +111,10 @@ python -u feature_generation.py --pagexml_list "/path/to/xml/list" --num_workers
 
 The graph data for a single PAGE-XML file will be saved in a corresponding json file, and will include feature 
 information from prior modules if the PAGE-XML files were updated accordingly. Usually this entails, on node-level, 
-position and size of the text blocks, stroke width and height of the contained text, and an indicator whether the text 
-block is a heading. Geometric features about the top and bottom baseline in the text block can also be added. On 
-edge-level it is indicated whether two text blocks are separated by a horizontal or vertical separator.
+position and size of the text blocks, position and size of the first and last baselines of each text block, 
+stroke width and height of the contained text, and an indicator whether the text block is a heading. On 
+edge-level it is indicated whether two text blocks are separated by a horizontal or vertical separator. Overall, this 
+results in 15 node features and 2 edge features.
 
 Optionally, visual regions can be added, which can later be used by a visual feature extractor (e.g. ARU-Net) to 
 integrate visual features.
@@ -129,6 +130,8 @@ This is currently being used for text block similarties coming from a BERT.
 ```bash
 --external_jsons "path/to/external/json/file"
 ```
+Both, the text block similarity features and any additonal external features will increase the final number 
+of available features for the GNN accordingly.
 
 #### Text block clustering
 The Graph Neural Network outputs a confidence graph regarding the afore-mentioned relation prediction task. Based on 
@@ -139,13 +142,32 @@ these predictions the last step to form articles is a clustering process. This i
 python -u run_gnn_clustering.py \
   --model_dir "path/to/trained/gnn/model" \
   --eval_list "path/to/json/list" \
-  --input_params node_feature_dim=NUM_NODE_FEATURES edge_feature_dim=NUM_EDGE_FEATURES \
-  --clustering_method CLUSTERING_METHOD \
+  --input_params \
+  node_feature_dim=NUM_NODE_FEATURES \
+  edge_feature_dim=NUM_EDGE_FEATURES \
+  --clustering_method CLUSTERING_METHOD
 ```
 
 For this module a trained GNN model is needed and the number of node and edge features needs to be set according to 
 the GNN, to correctly build the input pipeline. For clustering algorithms, we currently support a greedy approach 
 (greedy), a modified DBSCAN algorithm (dbscan) and a hierarchical clustering method (linkage).
+
+If the GNN was only trained on a subset of the generated features, the redundant features need to be manually masked 
+with a boolean list (1=include, 0=exclude), which should contain an entry for each available feature. For example, if 
+15 node features and 2 edge features are available, but the GNN was only trained on the first 4 node features, the 
+clustering call would have to look as follows
+
+```bash
+python -u run_gnn_clustering.py \
+  --model_dir "path/to/trained/gnn/model" \
+  --eval_list "path/to/json/list" \
+  --input_params \
+  node_feature_dim=15 \
+  edge_feature_dim=2 \
+  node_input_feature_mask=[1,1,1,1,0,0,0,0,0,0,0,0,0,0,0] \
+  edge_input_feature_mask=[0,0] \
+  --clustering_method CLUSTERING_METHOD
+```
 
 If visual regions were generated in the previous step and the GNN was trained accordingly, i.e. a visual feature 
 extractor component was added to the network, additional visual features can be integrated during this process. Note 

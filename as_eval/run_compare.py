@@ -94,6 +94,9 @@ if __name__ == '__main__':
         asComper.loadGT(gt_file_path)
         for clustering_path in clustering_paths:
             method_folders = [os.path.join(clustering_path, folder) for folder in os.listdir(clustering_path)]
+            if args.exclude:
+                for ex in args.exclude.split(","):
+                    method_folders = [res for res in method_folders if ex not in res]
             for method_path in [folder for folder in method_folders if os.path.isdir(folder)]:
                 cluster_file_path = os.path.splitext(os.path.basename(gt_file_path))[0] + "_clustering.xml"
                 hyp_file_path = os.path.join(method_path, cluster_file_path)

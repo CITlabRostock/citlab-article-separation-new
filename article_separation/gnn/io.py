@@ -159,5 +159,5 @@ def save_clustering_to_page(clustering, page_path, save_dir, info=""):
         os.makedirs(save_dir)
     save_path = os.path.join(save_dir, save_name)
     page.write_page_xml(save_path)
-    logging.info(f"Saved pageXML with graph clustering '{save_path}'")
+    logging.info(f"Saved pageXML with graph clustering '{os.path.abspath(save_path)}'")
     return save_path

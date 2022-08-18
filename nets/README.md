@@ -11,7 +11,8 @@ The `mixed_gnn_vn7e2.pb` contains a Graph Neural Network for the relation predic
 mix of German, Finnish and French newspapers. The name `vn7e2` describes the setup of the features that were used to 
 train the GNN:
 - `v`: Visual features were added during the training. This means that net network contains an ARU-Net branch, that 
-is able to extract addtional visual feature information from given images corresponding to the newspaper pages.
+is able to extract addtional visual feature information from given images corresponding to the newspaper pages. It is
+necessary to add visual regions to the graph features (see main README) in order for this to work.
 - `n7e2`: The network was trained on 7 node features and 2 edge features. From the standard 15 node features (see 
 main README), 8 were dismissed. In particular, the node features for the top and bottom baseline of each text block 
 were masked out. A clustering process using this network, if all 15 features were generated, would look something 

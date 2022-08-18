@@ -147,13 +147,18 @@ def save_clustering_to_page(clustering, page_path, save_dir, info=""):
     page.set_text_regions(text_regions, overwrite=True)
 
     # Write pagexml
-    page_path = os.path.relpath(page_path)
     save_name = re.sub(r'\.xml$', '_clustering.xml', os.path.basename(page_path))
-    page_dir = re.sub(r'page$', 'clustering', os.path.dirname(page_path))
     if info:
-        save_dir = os.path.join(save_dir, page_dir, info)
-    else:
-        save_dir = os.path.join(save_dir, page_dir)
+        save_dir = os.path.join(save_dir, info)
+
+    # page_path = os.path.relpath(page_path)
+    # save_name = re.sub(r'\.xml$', '_clustering.xml', os.path.basename(page_path))
+    # page_dir = re.sub(r'page$', 'clustering', os.path.dirname(page_path))
+    # if info:
+    #     save_dir = os.path.join(save_dir, page_dir, info)
+    # else:
+    #     save_dir = os.path.join(save_dir, page_dir)
+
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     save_path = os.path.join(save_dir, save_name)

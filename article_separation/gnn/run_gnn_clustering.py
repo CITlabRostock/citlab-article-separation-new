@@ -50,7 +50,8 @@ flags.define_boolean('mask_horizontally_separated_confs', False,
 flags.define_boolean('mask_heading_separated_confs', False,
                      'set confidences of edges from regions (upper) to headings (lower), '
                      'whose nodes are also vertically and horizontally aligned, to zero.')
-flags.define_dict('clustering_params', {}, "dict of key=value pairs defining the clustering configuration")
+flags.define_dict('clustering_params', {}, "dict of key=value pairs defining the clustering configuration. Have a look "
+                                           "at the __init__ method of the 'TextblockClustering' class for details. ")
 flags.define_string("out_dir", "", "directory to save graph confidences jsons and clustering pageXMLs. It retains the "
                                    "folder structure of the input data. Use an empty 'out_dir' for the original folder")
 flags.define_choices('save_conf', ['no_conf', 'with_conf', 'only_conf'], 'no_conf', str,

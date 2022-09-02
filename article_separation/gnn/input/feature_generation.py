@@ -718,23 +718,24 @@ def build_input_and_target(page_path,
                                   f"text block similarity dict. Using 0.5.")
                     edge_feature.extend([0.5])
         # external features
-        for ext in external_data:
-            try:
-                ext_page = ext[os.path.basename(page_path)]
-            except KeyError:
-                logging.warning(f'Could not find key {os.path.basename(page_path)} in external data json. Skipping.')
-                continue
-            if 'edge_features' in ext_page:
+        if external_data:
+            for ext in external_data:
                 try:
-                    edge_feature.extend(ext_page['edge_features'][text_region_a.id][text_region_b.id])
-                except (KeyError, TypeError):
-                    logging.debug(f"Could not find entry edge_features->{text_region_a.id}->{text_region_b.id} in "
-                                  f"external json. Defaulting.")
+                    ext_page = ext[os.path.basename(page_path)]
+                except KeyError:
+                    logging.warning(f'Could not find key {os.path.basename(page_path)} in external data json. Skipping.')
+                    continue
+                if 'edge_features' in ext_page:
                     try:
-                        edge_feature.extend(ext_page['edge_features']['default'])
-                    except KeyError:
-                        logging.debug(f"Could not find entry edge_features->default in external json. Using 0.5.")
-                        edge_feature.extend([0.5])
+                        edge_feature.extend(ext_page['edge_features'][text_region_a.id][text_region_b.id])
+                    except (KeyError, TypeError):
+                        logging.debug(f"Could not find entry edge_features->{text_region_a.id}->{text_region_b.id} in "
+                                      f"external json. Defaulting.")
+                        try:
+                            edge_feature.extend(ext_page['edge_features']['default'])
+                        except KeyError:
+                            logging.debug(f"Could not find entry edge_features->default in external json. Using 0.5.")
+                            edge_feature.extend([0.5])
         # final edge feature vector
         edge_features.append(edge_feature)
 
